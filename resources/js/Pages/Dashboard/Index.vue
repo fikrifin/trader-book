@@ -32,8 +32,8 @@ defineProps({
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">P/L Hari Ini</p>
-                <p class="mt-2 text-2xl font-bold" :class="Number(today_summary?.total_pl || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
-                    {{ today_summary?.total_pl || 0 }}
+                <p class="mt-2 text-2xl font-bold" :class="Number(today_summary?.pl || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
+                    {{ today_summary?.pl || 0 }}
                 </p>
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
@@ -42,32 +42,32 @@ defineProps({
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">P/L Bulan Ini</p>
-                <p class="mt-2 text-2xl font-bold" :class="Number(month_summary?.total_pl || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
-                    {{ month_summary?.total_pl || 0 }}
+                <p class="mt-2 text-2xl font-bold" :class="Number(month_summary?.pl || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
+                    {{ month_summary?.pl || 0 }}
                 </p>
             </div>
         </div>
 
         <div class="mt-6 rounded-lg bg-white p-4 shadow-sm">
             <p class="mb-2 text-sm font-medium text-gray-700">Progress Target Bulanan</p>
-            <AppProgressBar :value="target_progress?.progress_percent || 0" :max="100" />
+            <AppProgressBar :value="target_progress?.progress_pct || 0" :max="100" />
             <div class="mt-2 text-xs text-gray-500">
-                <span>Current: {{ target_progress?.current || 0 }}</span>
+                <span>Current: {{ target_progress?.actual_profit || 0 }}</span>
                 <span class="mx-1">•</span>
-                <span>Target: {{ target_progress?.target || 0 }}</span>
+                <span>Target: {{ target_progress?.target_profit || 0 }}</span>
                 <span class="mx-1">•</span>
-                <span>Remaining: {{ target_progress?.remaining || 0 }}</span>
+                <span>Progress: {{ target_progress?.progress_pct || 0 }}%</span>
             </div>
         </div>
 
         <div class="mt-4 grid gap-4 md:grid-cols-2">
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="mb-2 text-sm font-medium text-gray-700">Risk Status</p>
-                <p class="text-sm text-gray-600">Daily DD: {{ risk_status?.daily_drawdown || 0 }}%</p>
-                <p class="text-sm text-gray-600">Weekly DD: {{ risk_status?.weekly_drawdown || 0 }}%</p>
+                <p class="text-sm text-gray-600">Trades Today: {{ risk_status?.today_trade_count || 0 }}</p>
+                <p class="text-sm text-gray-600">Today Loss: {{ risk_status?.today_loss || 0 }}</p>
                 <div class="mt-2">
-                    <AppBadge :variant="risk_status?.daily_ok && risk_status?.weekly_ok ? 'win' : 'loss'">
-                        {{ risk_status?.daily_ok && risk_status?.weekly_ok ? 'Safe' : 'Warning' }}
+                    <AppBadge :variant="risk_status?.is_blocked ? 'loss' : 'win'">
+                        {{ risk_status?.is_blocked ? 'Blocked' : 'Safe' }}
                     </AppBadge>
                 </div>
             </div>
@@ -91,7 +91,7 @@ defineProps({
                 </thead>
                 <tbody class="divide-y">
                     <tr v-for="trade in recent_trades" :key="trade.id">
-                        <td class="px-3 py-2">{{ trade.trade_date }}</td>
+                        <td class="px-3 py-2">{{ trade.date }}</td>
                         <td class="px-3 py-2">{{ trade.pair }}</td>
                         <td class="px-3 py-2">
                             <AppBadge :variant="trade.result === 'win' ? 'win' : (trade.result === 'loss' ? 'loss' : (trade.result === 'breakeven' ? 'breakeven' : 'partial'))">

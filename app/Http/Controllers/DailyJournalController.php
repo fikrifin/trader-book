@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDailyJournalRequest;
+use App\Http\Requests\UpdateDailyJournalRequest;
 use App\Models\DailyJournal;
 use App\Models\Trade;
 use App\Models\TradingAccount;
@@ -114,7 +115,7 @@ class DailyJournalController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function update(StoreDailyJournalRequest $request, DailyJournal $journal): RedirectResponse
+    public function update(UpdateDailyJournalRequest $request, DailyJournal $journal): RedirectResponse
     {
         abort_if($journal->user_id !== auth()->id(), 403);
 

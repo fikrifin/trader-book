@@ -117,9 +117,14 @@ class TradeController extends Controller
         $riskStatus = app(RiskRuleService::class)->checkDailyStatus($account, (string) $trade->date);
         $warningMessage = collect(data_get($riskStatus, 'warnings', []))->implode(' ');
 
-        return redirect()->route('trades.index')
-            ->with('success', 'Trade berhasil disimpan.')
-            ->with('warning', $warningMessage ?: null);
+        $redirect = redirect()->route('trades.index')
+            ->with('success', 'Trade berhasil disimpan.');
+
+        if ($warningMessage !== '') {
+            $redirect->with('warning', $warningMessage);
+        }
+
+        return $redirect;
     }
 
     /**

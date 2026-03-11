@@ -21,8 +21,8 @@ const props = defineProps({
 const applyFilter = (event) => {
     const formData = new FormData(event.target);
     router.get(route('statistics.index'), {
-        from_date: formData.get('from_date') || '',
-        to_date: formData.get('to_date') || '',
+        date_from: formData.get('date_from') || '',
+        date_to: formData.get('date_to') || '',
     }, { preserveState: true, replace: true });
 };
 </script>
@@ -34,8 +34,8 @@ const applyFilter = (event) => {
         <h1 class="mb-4 text-xl font-semibold text-gray-900">Statistics</h1>
 
         <form class="mb-4 grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4" @submit.prevent="applyFilter">
-            <AppInput name="from_date" type="date" label="From" :model-value="filters?.from_date || ''" />
-            <AppInput name="to_date" type="date" label="To" :model-value="filters?.to_date || ''" />
+            <AppInput name="date_from" type="date" label="From" :model-value="filters?.date_from || ''" />
+            <AppInput name="date_to" type="date" label="To" :model-value="filters?.date_to || ''" />
             <div class="md:col-span-2 flex items-end gap-2">
                 <AppButton type="submit">Apply</AppButton>
             </div>
@@ -44,7 +44,7 @@ const applyFilter = (event) => {
         <div class="mb-4 grid gap-4 md:grid-cols-4">
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">Trades</p>
-                <p class="mt-2 text-xl font-semibold">{{ summary?.trade_count || 0 }}</p>
+                <p class="mt-2 text-xl font-semibold">{{ summary?.total_trades || 0 }}</p>
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">Win Rate</p>
@@ -56,7 +56,7 @@ const applyFilter = (event) => {
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">Net P/L</p>
-                <p class="mt-2 text-xl font-semibold" :class="Number(summary?.total_pl || 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ summary?.total_pl || 0 }}</p>
+                <p class="mt-2 text-xl font-semibold" :class="Number(net_vs_gross?.total_net || 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ net_vs_gross?.total_net || 0 }}</p>
             </div>
         </div>
 
@@ -67,7 +67,7 @@ const applyFilter = (event) => {
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">Avg Win / Loss</p>
-                <p class="mt-2 text-sm font-medium">{{ summary?.avg_win || 0 }} / {{ summary?.avg_loss || 0 }}</p>
+                <p class="mt-2 text-sm font-medium">{{ summary?.average_win || 0 }} / {{ summary?.average_loss || 0 }}</p>
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">Max Drawdown</p>
@@ -78,9 +78,9 @@ const applyFilter = (event) => {
         <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
             <h2 class="mb-3 text-sm font-semibold">Net vs Gross</h2>
             <div class="grid gap-3 md:grid-cols-3">
-                <p class="text-sm">Gross: <span class="font-medium">{{ net_vs_gross?.gross || 0 }}</span></p>
-                <p class="text-sm">Commission: <span class="font-medium">{{ net_vs_gross?.commission || 0 }}</span></p>
-                <p class="text-sm">Swap: <span class="font-medium">{{ net_vs_gross?.swap || 0 }}</span></p>
+                <p class="text-sm">Gross: <span class="font-medium">{{ net_vs_gross?.total_gross || 0 }}</span></p>
+                <p class="text-sm">Fees: <span class="font-medium">{{ net_vs_gross?.total_fees || 0 }}</span></p>
+                <p class="text-sm">Net: <span class="font-medium">{{ net_vs_gross?.total_net || 0 }}</span></p>
             </div>
         </div>
 
@@ -98,10 +98,10 @@ const applyFilter = (event) => {
                     </thead>
                     <tbody class="divide-y">
                         <tr v-for="item in performance_by_pair" :key="item.label">
-                            <td class="px-3 py-2">{{ item.label }}</td>
-                            <td class="px-3 py-2">{{ item.trades }}</td>
+                            <td class="px-3 py-2">{{ item.pair }}</td>
+                            <td class="px-3 py-2">{{ item.total_trades }}</td>
                             <td class="px-3 py-2">{{ item.win_rate }}%</td>
-                            <td class="px-3 py-2" :class="Number(item.total_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.total_pl }}</td>
+                            <td class="px-3 py-2" :class="Number(item.net_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.net_pl }}</td>
                         </tr>
                     </tbody>
                 </AppTable>
@@ -121,10 +121,10 @@ const applyFilter = (event) => {
                     </thead>
                     <tbody class="divide-y">
                         <tr v-for="item in performance_by_setup" :key="item.label">
-                            <td class="px-3 py-2">{{ item.label }}</td>
-                            <td class="px-3 py-2">{{ item.trades }}</td>
+                            <td class="px-3 py-2">{{ item.setup }}</td>
+                            <td class="px-3 py-2">{{ item.total_trades }}</td>
                             <td class="px-3 py-2">{{ item.win_rate }}%</td>
-                            <td class="px-3 py-2" :class="Number(item.total_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.total_pl }}</td>
+                            <td class="px-3 py-2" :class="Number(item.net_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.net_pl }}</td>
                         </tr>
                     </tbody>
                 </AppTable>
@@ -136,18 +136,18 @@ const applyFilter = (event) => {
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <h2 class="mb-3 text-sm font-semibold">Session</h2>
                 <div class="space-y-2 text-sm">
-                    <div v-for="item in performance_by_session" :key="item.label" class="flex items-center justify-between">
-                        <span>{{ item.label }}</span>
-                        <AppBadge :variant="Number(item.total_pl) >= 0 ? 'win' : 'loss'">{{ item.total_pl }}</AppBadge>
+                    <div v-for="item in performance_by_session" :key="item.session" class="flex items-center justify-between">
+                        <span>{{ item.session }}</span>
+                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'">{{ item.net_pl }}</AppBadge>
                     </div>
                 </div>
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <h2 class="mb-3 text-sm font-semibold">Timeframe</h2>
                 <div class="space-y-2 text-sm">
-                    <div v-for="item in performance_by_timeframe" :key="item.label" class="flex items-center justify-between">
-                        <span>{{ item.label }}</span>
-                        <AppBadge :variant="Number(item.total_pl) >= 0 ? 'win' : 'loss'">{{ item.total_pl }}</AppBadge>
+                    <div v-for="item in performance_by_timeframe" :key="item.timeframe" class="flex items-center justify-between">
+                        <span>{{ item.timeframe }}</span>
+                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'">{{ item.net_pl }}</AppBadge>
                     </div>
                 </div>
             </div>
@@ -156,7 +156,7 @@ const applyFilter = (event) => {
                 <div class="space-y-2 text-sm">
                     <div v-for="item in performance_by_day_of_week" :key="item.label" class="flex items-center justify-between">
                         <span>{{ item.label }}</span>
-                        <AppBadge :variant="Number(item.total_pl) >= 0 ? 'win' : 'loss'">{{ item.total_pl }}</AppBadge>
+                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'">{{ item.net_pl }}</AppBadge>
                     </div>
                 </div>
             </div>
@@ -166,8 +166,8 @@ const applyFilter = (event) => {
             <h2 class="mb-3 text-sm font-semibold">Mistake Distribution</h2>
             <div v-if="mistake_distribution?.length" class="space-y-2 text-sm">
                 <div v-for="item in mistake_distribution" :key="item.label" class="flex items-center justify-between">
-                    <span>{{ item.label }}</span>
-                    <AppBadge variant="warning">{{ item.value }}</AppBadge>
+                    <span>{{ item.mistake }}</span>
+                    <AppBadge variant="warning">{{ item.count }}</AppBadge>
                 </div>
             </div>
             <p v-else class="text-sm text-gray-500">Belum ada data kesalahan trading.</p>

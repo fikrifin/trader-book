@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTradingAccountRequest;
 use App\Models\TradingAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -106,7 +107,11 @@ class TradingAccountController extends Controller
     public function switchActive(Request $request): RedirectResponse
     {
         $request->validate([
-            'trading_account_id' => ['required', 'integer', 'exists:trading_accounts,id'],
+            'trading_account_id' => [
+                'required',
+                'integer',
+                Rule::exists('trading_accounts', 'id')->where(fn ($query) => $query->where('user_id', auth()->id())),
+            ],
         ]);
 
         $account = TradingAccount::where('id', $request->integer('trading_account_id'))
