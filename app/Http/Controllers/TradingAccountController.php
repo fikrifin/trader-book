@@ -42,9 +42,12 @@ class TradingAccountController extends Controller
      */
     public function store(StoreTradingAccountRequest $request): RedirectResponse
     {
+        $validated = $request->validated();
+
         $account = TradingAccount::query()->create([
-            ...$request->validated(),
+            ...$validated,
             'user_id' => auth()->id(),
+            'current_balance' => (float) data_get($validated, 'initial_balance', 0),
         ]);
 
         if (! auth()->user()?->active_account_id) {
@@ -78,6 +81,7 @@ class TradingAccountController extends Controller
         Gate::authorize('update', $account);
 
         $account->update($request->validated());
+        $account->recalculateBalance();
 
         return back()->with('success', 'Trading account berhasil diperbarui.');
     }
