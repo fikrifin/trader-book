@@ -34,8 +34,8 @@ class UpdateProfileRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
-            'timezone' => ['required', 'string', 'max:100'],
-            'currency_preference' => ['required', 'string', 'max:10'],
+            'timezone' => ['nullable', 'string', 'max:100'],
+            'currency_preference' => ['nullable', 'string', 'max:10'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ];
     }

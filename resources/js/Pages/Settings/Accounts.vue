@@ -2,12 +2,14 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
 import AppInput from '@/Components/UI/AppInput.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
 import AppSelect from '@/Components/UI/AppSelect.vue';
 import AppTable from '@/Components/UI/AppTable.vue';
 import AppPagination from '@/Components/UI/AppPagination.vue';
 import AppBadge from '@/Components/UI/AppBadge.vue';
 import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const props = defineProps({
     accounts: Object,
@@ -30,6 +32,74 @@ const createForm = useForm({
 
 const save = () => {
     createForm.post(route('settings.accounts.store'), { preserveScroll: true, onSuccess: () => createForm.reset() });
+};
+
+const editingId = ref(null);
+const deletingId = ref(null);
+
+const editForm = useForm({
+    name: '',
+    broker: '',
+    account_type: 'demo',
+    account_number: '',
+    initial_balance: 0,
+    currency: 'USD',
+    max_daily_loss: '',
+    max_daily_loss_pct: '',
+    max_trades_per_day: '',
+    max_drawdown_pct: '',
+    notes: '',
+    is_active: true,
+});
+
+const startEdit = (item) => {
+    editingId.value = item.id;
+    editForm.reset();
+    editForm.name = item.name || '';
+    editForm.broker = item.broker || '';
+    editForm.account_type = item.account_type || 'demo';
+    editForm.account_number = item.account_number || '';
+    editForm.initial_balance = item.initial_balance || 0;
+    editForm.currency = item.currency || 'USD';
+    editForm.max_daily_loss = item.max_daily_loss || '';
+    editForm.max_daily_loss_pct = item.max_daily_loss_pct || '';
+    editForm.max_trades_per_day = item.max_trades_per_day || '';
+    editForm.max_drawdown_pct = item.max_drawdown_pct || '';
+    editForm.notes = item.notes || '';
+    editForm.is_active = Boolean(item.is_active);
+};
+
+const cancelEdit = () => {
+    editingId.value = null;
+    editForm.clearErrors();
+};
+
+const submitEdit = () => {
+    if (!editingId.value) return;
+    editForm.put(route('settings.accounts.update', editingId.value), {
+        preserveScroll: true,
+        onSuccess: () => {
+            cancelEdit();
+        },
+    });
+};
+
+const confirmDelete = (id) => {
+    deletingId.value = id;
+};
+
+const runDelete = () => {
+    if (!deletingId.value) return;
+    const targetId = deletingId.value;
+    useForm({}).delete(route('settings.accounts.destroy', deletingId.value), {
+        preserveScroll: true,
+        onSuccess: () => {
+            deletingId.value = null;
+            if (editingId.value && editingId.value === targetId) {
+                cancelEdit();
+            }
+        },
+    });
 };
 </script>
 
@@ -71,14 +141,45 @@ const save = () => {
                 </thead>
                 <tbody class="divide-y">
                     <tr v-for="item in accounts.data" :key="item.id">
-                        <td class="px-3 py-2">{{ item.name }}</td>
-                        <td class="px-3 py-2"><AppBadge variant="info">{{ item.account_type }}</AppBadge></td>
-                        <td class="px-3 py-2">{{ item.current_balance }}</td>
-                        <td class="px-3 py-2">{{ item.currency }}</td>
+                        <td class="px-3 py-2">
+                            <template v-if="editingId === item.id">
+                                <AppInput v-model="editForm.name" :error="editForm.errors.name" />
+                            </template>
+                            <template v-else>{{ item.name }}</template>
+                        </td>
+                        <td class="px-3 py-2">
+                            <template v-if="editingId === item.id">
+                                <AppSelect v-model="editForm.account_type" :options="[
+                                    { value: 'live', label: 'Live' },
+                                    { value: 'demo', label: 'Demo' },
+                                    { value: 'prop', label: 'Prop' }
+                                ]" :error="editForm.errors.account_type" />
+                            </template>
+                            <template v-else><AppBadge variant="info">{{ item.account_type }}</AppBadge></template>
+                        </td>
+                        <td class="px-3 py-2">
+                            <template v-if="editingId === item.id">
+                                <AppInput v-model="editForm.initial_balance" type="number" :error="editForm.errors.initial_balance" />
+                            </template>
+                            <template v-else>{{ item.current_balance }}</template>
+                        </td>
+                        <td class="px-3 py-2">
+                            <template v-if="editingId === item.id">
+                                <AppInput v-model="editForm.currency" :error="editForm.errors.currency" />
+                            </template>
+                            <template v-else>{{ item.currency }}</template>
+                        </td>
                         <td class="px-3 py-2">
                             <div class="flex gap-2">
                                 <Link :href="route('accounts.switch')" method="post" as="button" :data="{ trading_account_id: item.id }" class="rounded border px-2 py-1 text-xs">Set Active</Link>
-                                <Link :href="route('settings.accounts.destroy', item.id)" method="delete" as="button" class="rounded border border-red-200 px-2 py-1 text-xs text-red-600">Delete</Link>
+                                <template v-if="editingId === item.id">
+                                    <button type="button" class="rounded border border-green-200 px-2 py-1 text-xs text-green-700" @click="submitEdit">Save</button>
+                                    <button type="button" class="rounded border px-2 py-1 text-xs" @click="cancelEdit">Cancel</button>
+                                </template>
+                                <template v-else>
+                                    <button type="button" class="rounded border px-2 py-1 text-xs" @click="startEdit(item)">Edit</button>
+                                    <button type="button" class="rounded border border-red-200 px-2 py-1 text-xs text-red-600" @click="confirmDelete(item.id)">Delete</button>
+                                </template>
                             </div>
                         </td>
                     </tr>
@@ -91,5 +192,14 @@ const save = () => {
             <template #title>Belum ada account</template>
             Tambahkan account trading pertama Anda.
         </AppEmptyState>
+
+        <AppModal :show="Boolean(deletingId)" @close="deletingId = null">
+            <h3 class="text-lg font-semibold text-gray-900">Hapus Account?</h3>
+            <p class="mt-2 text-sm text-gray-600">Tindakan ini tidak bisa dibatalkan.</p>
+            <div class="mt-4 flex justify-end gap-2">
+                <AppButton variant="secondary" @click="deletingId = null">Batal</AppButton>
+                <AppButton variant="danger" @click="runDelete">Hapus</AppButton>
+            </div>
+        </AppModal>
     </AppLayout>
 </template>

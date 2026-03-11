@@ -10,6 +10,7 @@ use App\Models\TradingAccount;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -93,7 +94,7 @@ class DailyJournalController extends Controller
      */
     public function show(DailyJournal $journal): Response
     {
-        abort_if($journal->user_id !== auth()->id(), 403);
+        Gate::authorize('view', $journal);
 
         $trades = Trade::query()
             ->forUser()
@@ -117,7 +118,7 @@ class DailyJournalController extends Controller
      */
     public function update(UpdateDailyJournalRequest $request, DailyJournal $journal): RedirectResponse
     {
-        abort_if($journal->user_id !== auth()->id(), 403);
+        Gate::authorize('update', $journal);
 
         $validated = $request->validated();
 

@@ -30,7 +30,12 @@ class ProfileController extends Controller
         $validated = $request->validated();
 
         $user = $request->user();
+        $emailChanged = array_key_exists('email', $validated) && $validated['email'] !== $user->email;
         $user->fill($validated);
+
+        if ($emailChanged) {
+            $user->email_verified_at = null;
+        }
 
         if (array_key_exists('password', $validated) && filled($validated['password'])) {
             $user->password = $validated['password'];
@@ -38,7 +43,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return Redirect::route('settings.profile')->with('success', 'Profil berhasil diperbarui.');
+        return Redirect::to('/profile')->with('success', 'Profil berhasil diperbarui.');
     }
 
     /**

@@ -2,9 +2,12 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AppBadge from '@/Components/UI/AppBadge.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
+import AppChart from '@/Components/UI/AppChart.vue';
+import AppCurrencyDisplay from '@/Components/UI/AppCurrencyDisplay.vue';
 import AppInput from '@/Components/UI/AppInput.vue';
 import AppTable from '@/Components/UI/AppTable.vue';
 import { Head, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     filters: Object,
@@ -25,6 +28,46 @@ const applyFilter = (event) => {
         date_to: formData.get('date_to') || '',
     }, { preserveState: true, replace: true });
 };
+
+const chartBaseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+};
+
+const winLossDonutData = computed(() => {
+    const totalTrades = Number(props.summary?.total_trades || 0);
+    const winRate = Number(props.summary?.win_rate || 0);
+    const wins = Math.round((winRate / 100) * totalTrades);
+    const lossesAndOthers = Math.max(totalTrades - wins, 0);
+
+    return {
+        labels: ['Wins', 'Non-win'],
+        datasets: [
+            {
+                data: [wins, lossesAndOthers],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 0,
+            },
+        ],
+    };
+});
+
+const pairBarChartData = computed(() => {
+    const topPairs = (props.performance_by_pair || []).slice(0, 8);
+
+    return {
+        labels: topPairs.map((item) => item.pair),
+        datasets: [
+            {
+                label: 'Net P/L',
+                data: topPairs.map((item) => Number(item.net_pl || 0)),
+                backgroundColor: topPairs.map((item) => Number(item.net_pl || 0) >= 0 ? '#10b981' : '#ef4444'),
+                borderRadius: 4,
+                maxBarThickness: 26,
+            },
+        ],
+    };
+});
 </script>
 
 <template>
@@ -56,7 +99,7 @@ const applyFilter = (event) => {
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">Net P/L</p>
-                <p class="mt-2 text-xl font-semibold" :class="Number(net_vs_gross?.total_net || 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ net_vs_gross?.total_net || 0 }}</p>
+                <p class="mt-2 text-xl font-semibold" :class="Number(net_vs_gross?.total_net || 0) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="net_vs_gross?.total_net || 0" show-plus /></p>
             </div>
         </div>
 
@@ -78,9 +121,20 @@ const applyFilter = (event) => {
         <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
             <h2 class="mb-3 text-sm font-semibold">Net vs Gross</h2>
             <div class="grid gap-3 md:grid-cols-3">
-                <p class="text-sm">Gross: <span class="font-medium">{{ net_vs_gross?.total_gross || 0 }}</span></p>
-                <p class="text-sm">Fees: <span class="font-medium">{{ net_vs_gross?.total_fees || 0 }}</span></p>
-                <p class="text-sm">Net: <span class="font-medium">{{ net_vs_gross?.total_net || 0 }}</span></p>
+                <p class="text-sm">Gross: <span class="font-medium"><AppCurrencyDisplay :value="net_vs_gross?.total_gross || 0" /></span></p>
+                <p class="text-sm">Fees: <span class="font-medium"><AppCurrencyDisplay :value="net_vs_gross?.total_fees || 0" /></span></p>
+                <p class="text-sm">Net: <span class="font-medium"><AppCurrencyDisplay :value="net_vs_gross?.total_net || 0" show-plus /></span></p>
+            </div>
+        </div>
+
+        <div class="mb-4 grid gap-4 md:grid-cols-2">
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <h2 class="mb-3 text-sm font-semibold">Win Distribution</h2>
+                <AppChart type="doughnut" :data="winLossDonutData" :options="chartBaseOptions" height-class="h-64" />
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <h2 class="mb-3 text-sm font-semibold">Top Pair Performance</h2>
+                <AppChart type="bar" :data="pairBarChartData" :options="chartBaseOptions" height-class="h-64" />
             </div>
         </div>
 
@@ -101,7 +155,7 @@ const applyFilter = (event) => {
                             <td class="px-3 py-2">{{ item.pair }}</td>
                             <td class="px-3 py-2">{{ item.total_trades }}</td>
                             <td class="px-3 py-2">{{ item.win_rate }}%</td>
-                            <td class="px-3 py-2" :class="Number(item.net_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.net_pl }}</td>
+                            <td class="px-3 py-2" :class="Number(item.net_pl) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="item.net_pl" show-plus /></td>
                         </tr>
                     </tbody>
                 </AppTable>
@@ -124,7 +178,7 @@ const applyFilter = (event) => {
                             <td class="px-3 py-2">{{ item.setup }}</td>
                             <td class="px-3 py-2">{{ item.total_trades }}</td>
                             <td class="px-3 py-2">{{ item.win_rate }}%</td>
-                            <td class="px-3 py-2" :class="Number(item.net_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.net_pl }}</td>
+                            <td class="px-3 py-2" :class="Number(item.net_pl) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="item.net_pl" show-plus /></td>
                         </tr>
                     </tbody>
                 </AppTable>
@@ -138,7 +192,7 @@ const applyFilter = (event) => {
                 <div class="space-y-2 text-sm">
                     <div v-for="item in performance_by_session" :key="item.session" class="flex items-center justify-between">
                         <span>{{ item.session }}</span>
-                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'">{{ item.net_pl }}</AppBadge>
+                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'"><AppCurrencyDisplay :value="item.net_pl" show-plus /></AppBadge>
                     </div>
                 </div>
             </div>
@@ -147,7 +201,7 @@ const applyFilter = (event) => {
                 <div class="space-y-2 text-sm">
                     <div v-for="item in performance_by_timeframe" :key="item.timeframe" class="flex items-center justify-between">
                         <span>{{ item.timeframe }}</span>
-                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'">{{ item.net_pl }}</AppBadge>
+                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'"><AppCurrencyDisplay :value="item.net_pl" show-plus /></AppBadge>
                     </div>
                 </div>
             </div>
@@ -156,7 +210,7 @@ const applyFilter = (event) => {
                 <div class="space-y-2 text-sm">
                     <div v-for="item in performance_by_day_of_week" :key="item.label" class="flex items-center justify-between">
                         <span>{{ item.label }}</span>
-                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'">{{ item.net_pl }}</AppBadge>
+                        <AppBadge :variant="Number(item.net_pl) >= 0 ? 'win' : 'loss'"><AppCurrencyDisplay :value="item.net_pl" show-plus /></AppBadge>
                     </div>
                 </div>
             </div>

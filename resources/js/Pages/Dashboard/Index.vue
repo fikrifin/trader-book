@@ -1,11 +1,14 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AppBadge from '@/Components/UI/AppBadge.vue';
+import AppChart from '@/Components/UI/AppChart.vue';
+import AppCurrencyDisplay from '@/Components/UI/AppCurrencyDisplay.vue';
 import AppProgressBar from '@/Components/UI/AppProgressBar.vue';
 import AppTable from '@/Components/UI/AppTable.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-defineProps({
+const props = defineProps({
     today_summary: Object,
     month_summary: Object,
     equity_curve: Array,
@@ -14,6 +17,43 @@ defineProps({
     target_progress: Object,
     risk_status: Object,
 });
+
+const chartBaseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { display: false },
+    },
+};
+
+const equityChartData = computed(() => ({
+    labels: (props.equity_curve || []).map((item) => item.date),
+    datasets: [
+        {
+            label: 'Equity Curve',
+            data: (props.equity_curve || []).map((item) => Number(item.cumulative_pl || 0)),
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.16)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2,
+        },
+    ],
+}));
+
+const dailyPlChartData = computed(() => ({
+    labels: (props.daily_pl_chart || []).map((item) => item.date),
+    datasets: [
+        {
+            label: 'Daily P/L',
+            data: (props.daily_pl_chart || []).map((item) => Number(item.pl || 0)),
+            backgroundColor: (props.daily_pl_chart || []).map((item) => Number(item.pl || 0) >= 0 ? '#10b981' : '#ef4444'),
+            borderRadius: 4,
+            maxBarThickness: 22,
+        },
+    ],
+}));
 </script>
 
 <template>
@@ -33,7 +73,7 @@ defineProps({
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">P/L Hari Ini</p>
                 <p class="mt-2 text-2xl font-bold" :class="Number(today_summary?.pl || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
-                    {{ today_summary?.pl || 0 }}
+                    <AppCurrencyDisplay :value="today_summary?.pl || 0" show-plus />
                 </p>
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
@@ -43,7 +83,7 @@ defineProps({
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase text-gray-500">P/L Bulan Ini</p>
                 <p class="mt-2 text-2xl font-bold" :class="Number(month_summary?.pl || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
-                    {{ month_summary?.pl || 0 }}
+                    <AppCurrencyDisplay :value="month_summary?.pl || 0" show-plus />
                 </p>
             </div>
         </div>
@@ -52,9 +92,9 @@ defineProps({
             <p class="mb-2 text-sm font-medium text-gray-700">Progress Target Bulanan</p>
             <AppProgressBar :value="target_progress?.progress_pct || 0" :max="100" />
             <div class="mt-2 text-xs text-gray-500">
-                <span>Current: {{ target_progress?.actual_profit || 0 }}</span>
+                <span>Current: <AppCurrencyDisplay :value="target_progress?.actual_profit || 0" show-plus /></span>
                 <span class="mx-1">•</span>
-                <span>Target: {{ target_progress?.target_profit || 0 }}</span>
+                <span>Target: <AppCurrencyDisplay :value="target_progress?.target_profit || 0" /></span>
                 <span class="mx-1">•</span>
                 <span>Progress: {{ target_progress?.progress_pct || 0 }}%</span>
             </div>
@@ -72,9 +112,20 @@ defineProps({
                 </div>
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
-                <p class="mb-2 text-sm font-medium text-gray-700">Chart Data</p>
-                <p class="text-sm text-gray-600">Equity points: {{ equity_curve?.length || 0 }}</p>
-                <p class="text-sm text-gray-600">Daily P/L points: {{ daily_pl_chart?.length || 0 }}</p>
+                <p class="mb-2 text-sm font-medium text-gray-700">Month Stats</p>
+                <p class="text-sm text-gray-600">Trades: {{ month_summary?.trade_count || 0 }}</p>
+                <p class="text-sm text-gray-600">Profit Factor: {{ month_summary?.profit_factor || 0 }}</p>
+            </div>
+        </div>
+
+        <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="mb-2 text-sm font-medium text-gray-700">Equity Curve (90 hari)</p>
+                <AppChart type="line" :data="equityChartData" :options="chartBaseOptions" height-class="h-64" />
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="mb-2 text-sm font-medium text-gray-700">Daily P/L (30 hari)</p>
+                <AppChart type="bar" :data="dailyPlChartData" :options="chartBaseOptions" height-class="h-64" />
             </div>
         </div>
 
@@ -98,7 +149,7 @@ defineProps({
                                 {{ trade.result }}
                             </AppBadge>
                         </td>
-                        <td class="px-3 py-2" :class="Number(trade.profit_loss) >= 0 ? 'text-green-600' : 'text-red-600'">{{ trade.profit_loss }}</td>
+                        <td class="px-3 py-2" :class="Number(trade.profit_loss) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="trade.profit_loss" show-plus /></td>
                     </tr>
                 </tbody>
             </AppTable>

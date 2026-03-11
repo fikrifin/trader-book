@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('/profile', [ProfileController::class, 'edit']);
+    Route::patch('/profile', [ProfileController::class, 'update']);
+    Route::delete('/profile', [ProfileController::class, 'destroy']);
+
     Route::get('/trades/export', [ExportController::class, 'trades'])->name('trades.export');
 
     Route::resource('trades', TradeController::class);

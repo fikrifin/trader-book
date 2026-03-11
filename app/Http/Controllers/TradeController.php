@@ -11,6 +11,7 @@ use App\Models\TradingAccount;
 use App\Services\RiskRuleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -132,7 +133,7 @@ class TradeController extends Controller
      */
     public function show(Trade $trade): Response
     {
-        abort_if($trade->user_id !== auth()->id(), 403);
+        Gate::authorize('view', $trade);
 
         return Inertia::render('Trades/Show', [
             'trade' => $trade->load(['tradingAccount:id,name,currency', 'instrument:id,symbol', 'setupModel:id,name']),
@@ -144,7 +145,7 @@ class TradeController extends Controller
      */
     public function edit(Trade $trade): Response
     {
-        abort_if($trade->user_id !== auth()->id(), 403);
+        Gate::authorize('update', $trade);
 
         return Inertia::render('Trades/Edit', [
             'trade' => $trade,
@@ -159,7 +160,7 @@ class TradeController extends Controller
      */
     public function update(UpdateTradeRequest $request, Trade $trade): RedirectResponse
     {
-        abort_if($trade->user_id !== auth()->id(), 403);
+        Gate::authorize('update', $trade);
 
         $validated = $request->validated();
         $oldAccountId = $trade->trading_account_id;
@@ -217,7 +218,7 @@ class TradeController extends Controller
      */
     public function destroy(Trade $trade): RedirectResponse
     {
-        abort_if($trade->user_id !== auth()->id(), 403);
+        Gate::authorize('delete', $trade);
 
         if ($trade->screenshot_before) {
             Storage::disk('public')->delete($trade->screenshot_before);

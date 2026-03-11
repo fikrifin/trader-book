@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import {
     Bars3Icon,
     XMarkIcon,
+    ChevronDownIcon,
     HomeIcon,
     ChartBarIcon,
     BookOpenIcon,
@@ -23,16 +24,25 @@ const switchForm = useForm({
 });
 
 const mobileOpen = ref(false);
+const desktopSettingsOpen = ref(route().current('settings.*'));
+const mobileSettingsOpen = ref(route().current('settings.*'));
 
 const menu = [
     { label: 'Dashboard', href: route('dashboard'), current: 'dashboard', icon: HomeIcon },
     { label: 'Trades', href: route('trades.index'), current: 'trades.*', icon: ClipboardDocumentListIcon },
     { label: 'Journal', href: route('journals.index'), current: 'journals.*', icon: BookOpenIcon },
     { label: 'Statistics', href: route('statistics.index'), current: 'statistics.*', icon: ChartBarIcon },
-    { label: 'Settings', href: route('settings.accounts.index'), current: 'settings.*', icon: Cog6ToothIcon },
 ];
 
-const desktopMenu = computed(() => menu.value || menu);
+const settingsMenu = [
+    { label: 'Accounts', href: route('settings.accounts.index'), current: 'settings.accounts.*' },
+    { label: 'Instruments', href: route('settings.instruments.index'), current: 'settings.instruments.*' },
+    { label: 'Setups', href: route('settings.setups.index'), current: 'settings.setups.*' },
+    { label: 'Targets', href: route('settings.targets.index'), current: 'settings.targets.*' },
+    { label: 'Profile', href: route('settings.profile'), current: 'settings.profile*' },
+];
+
+const desktopMenu = computed(() => menu);
 const primaryMobileMenu = computed(() => [menu[0], menu[1], menu[2], menu[3]]);
 
 const accountOptions = computed(() => accounts.value.map((item) => ({
@@ -49,6 +59,14 @@ const isActive = (pattern) => route().current(pattern);
 
 const closeMobileMenu = () => {
     mobileOpen.value = false;
+};
+
+const toggleDesktopSettings = () => {
+    desktopSettingsOpen.value = !desktopSettingsOpen.value;
+};
+
+const toggleMobileSettings = () => {
+    mobileSettingsOpen.value = !mobileSettingsOpen.value;
 };
 </script>
 
@@ -70,6 +88,31 @@ const closeMobileMenu = () => {
                         <component :is="item.icon" class="size-4" />
                         {{ item.label }}
                     </Link>
+
+                    <button
+                        type="button"
+                        class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm"
+                        :class="isActive('settings.*') ? 'bg-brand-700 text-white' : 'text-gray-200 hover:bg-gray-800'"
+                        @click="toggleDesktopSettings"
+                    >
+                        <span class="flex items-center gap-2">
+                            <Cog6ToothIcon class="size-4" />
+                            Settings
+                        </span>
+                        <ChevronDownIcon class="size-4 transition" :class="desktopSettingsOpen ? 'rotate-180' : ''" />
+                    </button>
+
+                    <div v-if="desktopSettingsOpen" class="ml-6 space-y-1 border-l border-gray-800 pl-3">
+                        <Link
+                            v-for="item in settingsMenu"
+                            :key="`desktop-settings-${item.label}`"
+                            :href="item.href"
+                            class="block rounded-md px-3 py-2 text-sm"
+                            :class="isActive(item.current) ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800'"
+                        >
+                            {{ item.label }}
+                        </Link>
+                    </div>
                 </nav>
             </aside>
 
@@ -108,7 +151,7 @@ const closeMobileMenu = () => {
                     </div>
                 </header>
 
-                <main class="p-4 lg:p-6">
+                <main class="p-4 pb-20 lg:p-6 lg:pb-6">
                     <slot />
                 </main>
             </div>
@@ -161,6 +204,32 @@ const closeMobileMenu = () => {
                         <component :is="item.icon" class="size-4" />
                         {{ item.label }}
                     </Link>
+
+                    <button
+                        type="button"
+                        class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm"
+                        :class="isActive('settings.*') ? 'bg-brand-700 text-white' : 'text-gray-200 hover:bg-gray-800'"
+                        @click="toggleMobileSettings"
+                    >
+                        <span class="flex items-center gap-2">
+                            <Cog6ToothIcon class="size-4" />
+                            Settings
+                        </span>
+                        <ChevronDownIcon class="size-4 transition" :class="mobileSettingsOpen ? 'rotate-180' : ''" />
+                    </button>
+
+                    <div v-if="mobileSettingsOpen" class="ml-6 space-y-1 border-l border-gray-800 pl-3">
+                        <Link
+                            v-for="item in settingsMenu"
+                            :key="`mobile-settings-${item.label}`"
+                            :href="item.href"
+                            class="block rounded-md px-3 py-2 text-sm"
+                            :class="isActive(item.current) ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800'"
+                            @click="closeMobileMenu"
+                        >
+                            {{ item.label }}
+                        </Link>
+                    </div>
                 </nav>
             </aside>
         </Transition>

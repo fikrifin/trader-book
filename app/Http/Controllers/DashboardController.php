@@ -6,6 +6,7 @@ use App\Models\MonthlyTarget;
 use App\Models\Trade;
 use App\Models\TradingAccount;
 use App\Services\RiskRuleService;
+use App\Services\StatisticService;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,14 +30,9 @@ class DashboardController extends Controller
         $todayTrades = (clone $baseQuery)->whereDate('date', $today)->get();
         $monthTrades = (clone $baseQuery)->whereBetween('date', [$startOfMonth->toDateString(), Carbon::now()->toDateString()])->get();
 
-        $totalWinMonth = $monthTrades->where('result', 'win')->count();
-        $monthWinRate = $monthTrades->count() > 0
-            ? round(($totalWinMonth / $monthTrades->count()) * 100, 2)
-            : 0;
-
-        $grossProfit = (float) $monthTrades->where('profit_loss', '>', 0)->sum('profit_loss');
-        $grossLoss = abs((float) $monthTrades->where('profit_loss', '<', 0)->sum('profit_loss'));
-        $profitFactor = $grossLoss > 0 ? round($grossProfit / $grossLoss, 2) : ($grossProfit > 0 ? 'INF' : 0);
+        $monthStats = new StatisticService($monthTrades);
+        $monthWinRate = $monthStats->winRate();
+        $profitFactor = $monthStats->profitFactor();
 
         $dailyGroups = (clone $baseQuery)
             ->whereDate('date', '>=', Carbon::now()->subDays(90)->toDateString())

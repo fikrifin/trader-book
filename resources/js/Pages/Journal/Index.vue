@@ -1,13 +1,15 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import AppCalendar from '@/Components/UI/AppCalendar.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
+import AppCurrencyDisplay from '@/Components/UI/AppCurrencyDisplay.vue';
 import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
 import AppInput from '@/Components/UI/AppInput.vue';
 import AppPagination from '@/Components/UI/AppPagination.vue';
 import AppSelect from '@/Components/UI/AppSelect.vue';
 import AppTable from '@/Components/UI/AppTable.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 const props = defineProps({
     journals: Object,
@@ -26,6 +28,8 @@ const accountOptions = computed(() => (props.accounts || []).map((item) => ({
     value: item.id,
     label: `${item.name} (${item.account_type})`,
 })));
+
+const viewMode = ref('calendar');
 
 const applyFilters = () => {
     router.get(route('journals.index'), filters, { preserveState: true, preserveScroll: true });
@@ -49,7 +53,13 @@ const createJournal = () => {
     <Head title="Journal" />
 
     <AppLayout>
-        <h1 class="mb-4 text-xl font-semibold text-gray-900">Daily Journal</h1>
+        <div class="mb-4 flex items-center justify-between">
+            <h1 class="text-xl font-semibold text-gray-900">Daily Journal</h1>
+            <div class="flex gap-2">
+                <AppButton :variant="viewMode === 'calendar' ? 'primary' : 'secondary'" @click="viewMode = 'calendar'">Calendar</AppButton>
+                <AppButton :variant="viewMode === 'list' ? 'primary' : 'secondary'" @click="viewMode = 'list'">List</AppButton>
+            </div>
+        </div>
 
         <div class="mb-4 grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4">
             <AppInput v-model="filters.month" type="month" label="Month" />
@@ -87,7 +97,7 @@ const createJournal = () => {
 
         <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
             <h2 class="mb-3 text-sm font-semibold">Trade Summary by Date ({{ month }})</h2>
-            <AppTable v-if="trade_summary?.length">
+            <AppTable v-if="trade_summary?.length && viewMode === 'list'">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-3 py-2 text-left">Date</th>
@@ -99,17 +109,23 @@ const createJournal = () => {
                     <tr v-for="item in trade_summary" :key="item.date">
                         <td class="px-3 py-2">{{ item.date }}</td>
                         <td class="px-3 py-2">{{ item.trade_count }}</td>
-                        <td class="px-3 py-2" :class="Number(item.total_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.total_pl }}</td>
+                        <td class="px-3 py-2" :class="Number(item.total_pl) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="item.total_pl" show-plus /></td>
                     </tr>
                 </tbody>
             </AppTable>
+            <AppCalendar
+                v-else-if="viewMode === 'calendar'"
+                :month="month"
+                :trade-summary="trade_summary"
+                :journals="journals?.data || []"
+            />
             <AppEmptyState v-else>
                 <template #title>Belum ada trade di bulan ini</template>
                 Summary akan tampil setelah ada trade.
             </AppEmptyState>
         </div>
 
-        <template v-if="journals?.data?.length">
+        <template v-if="journals?.data?.length && viewMode === 'list'">
             <AppTable>
                 <thead class="bg-gray-50">
                     <tr>

@@ -15,7 +15,7 @@ class StatisticController extends Controller
     public function index(Request $request): Response
     {
         $filters = [
-            'date_from' => $request->input('date_from', Carbon::now()->startOfMonth()->toDateString()),
+            'date_from' => $request->input('date_from', Carbon::now()->subMonths(3)->startOfDay()->toDateString()),
             'date_to' => $request->input('date_to', Carbon::now()->toDateString()),
             'pair' => $request->input('pair'),
             'result' => $request->input('result'),

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTradingAccountRequest;
 use App\Models\TradingAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -74,7 +75,7 @@ class TradingAccountController extends Controller
      */
     public function update(StoreTradingAccountRequest $request, TradingAccount $account): RedirectResponse
     {
-        abort_if($account->user_id !== auth()->id(), 403);
+        Gate::authorize('update', $account);
 
         $account->update($request->validated());
 
@@ -86,7 +87,7 @@ class TradingAccountController extends Controller
      */
     public function destroy(TradingAccount $account): RedirectResponse
     {
-        abort_if($account->user_id !== auth()->id(), 403);
+        Gate::authorize('delete', $account);
 
         $user = auth()->user();
 

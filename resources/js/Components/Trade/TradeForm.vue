@@ -29,6 +29,18 @@ const setupOptions = computed(() => props.setups.map((item) => ({
     label: item.name,
 })));
 
+const beforePreview = computed(() => {
+    return props.form.screenshot_before instanceof File
+        ? URL.createObjectURL(props.form.screenshot_before)
+        : null;
+});
+
+const afterPreview = computed(() => {
+    return props.form.screenshot_after instanceof File
+        ? URL.createObjectURL(props.form.screenshot_after)
+        : null;
+});
+
 const pipSize = computed(() => {
     const pair = String(props.form.pair || '').toUpperCase();
 
@@ -91,6 +103,8 @@ watch(
 
 <template>
     <form class="space-y-5" @submit.prevent="emit('submit')">
+        <div>
+            <h2 class="mb-2 text-sm font-semibold text-gray-700">Entry Details</h2>
         <div class="grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4">
             <AppInput v-model="form.date" type="date" label="Date" :error="form.errors.date" />
             <AppInput v-model="form.open_time" type="time" label="Open Time" :error="form.errors.open_time" />
@@ -107,7 +121,10 @@ watch(
             ]" :error="form.errors.session" />
             <AppInput v-model="form.timeframe" label="Timeframe" placeholder="M15 / H1" :error="form.errors.timeframe" />
         </div>
+        </div>
 
+        <div>
+            <h2 class="mb-2 text-sm font-semibold text-gray-700">Price & Risk</h2>
         <div class="grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4">
             <AppInput v-model="form.entry_price" type="number" step="0.00001" label="Entry" :error="form.errors.entry_price" />
             <AppInput v-model="form.stop_loss" type="number" step="0.00001" label="Stop Loss" :error="form.errors.stop_loss" />
@@ -118,7 +135,10 @@ watch(
             <AppInput v-model="form.lot_size" type="number" step="0.01" label="Lot Size" :error="form.errors.lot_size" />
             <AppInput v-model="form.risk_amount" type="number" step="0.01" label="Risk Amount" :error="form.errors.risk_amount" />
         </div>
+        </div>
 
+        <div>
+            <h2 class="mb-2 text-sm font-semibold text-gray-700">Exit & Result</h2>
         <div class="grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4">
             <AppInput v-model="form.commission" type="number" step="0.01" label="Commission" :error="form.errors.commission" />
             <AppInput v-model="form.swap" type="number" step="0.01" label="Swap" :error="form.errors.swap" />
@@ -134,7 +154,10 @@ watch(
             <AppInput v-model="form.rr_planned" type="number" step="0.01" label="RR Planned" :error="form.errors.rr_planned" />
             <AppInput v-model="form.rr_ratio" type="number" step="0.01" label="RR Actual" :error="form.errors.rr_ratio" />
         </div>
+        </div>
 
+        <div>
+            <h2 class="mb-2 text-sm font-semibold text-gray-700">Notes & Tags</h2>
         <div class="grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-2">
             <AppSelect v-model="form.setup_id" label="Setup (optional)" :options="setupOptions" :error="form.errors.setup_id" />
             <AppInput v-model="form.setup" label="Setup (custom text)" :error="form.errors.setup" />
@@ -155,19 +178,25 @@ watch(
                 <textarea v-model="form.notes" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows="3" />
             </label>
         </div>
+        </div>
 
+        <div>
+            <h2 class="mb-2 text-sm font-semibold text-gray-700">Screenshots</h2>
         <div class="grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-2">
             <label class="block text-sm">
                 <span class="mb-1 block font-medium text-gray-700">Screenshot Before</span>
                 <input type="file" accept="image/*" @change="form.screenshot_before = $event.target.files[0]" />
                 <span v-if="form.errors.screenshot_before" class="mt-1 block text-xs text-red-600">{{ form.errors.screenshot_before }}</span>
+                <img v-if="beforePreview" :src="beforePreview" alt="Screenshot Before Preview" class="mt-2 max-h-40 rounded border" />
             </label>
 
             <label class="block text-sm">
                 <span class="mb-1 block font-medium text-gray-700">Screenshot After</span>
                 <input type="file" accept="image/*" @change="form.screenshot_after = $event.target.files[0]" />
                 <span v-if="form.errors.screenshot_after" class="mt-1 block text-xs text-red-600">{{ form.errors.screenshot_after }}</span>
+                <img v-if="afterPreview" :src="afterPreview" alt="Screenshot After Preview" class="mt-2 max-h-40 rounded border" />
             </label>
+        </div>
         </div>
 
         <div>
