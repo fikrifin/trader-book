@@ -103,7 +103,10 @@ const exportData = (format) => {
 
     <AppLayout>
         <div class="mb-4 flex items-center justify-between">
-            <h1 class="text-xl font-semibold text-gray-900">Trades</h1>
+            <div>
+                <h1 class="text-xl font-semibold text-gray-900">Trades</h1>
+                <p class="text-xs text-gray-500">Kelola, filter, dan analisa histori transaksi Anda.</p>
+            </div>
             <Link :href="route('trades.create')" class="inline-flex items-center rounded-lg bg-gradient-to-r from-brand-600 to-brand-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-brand-700 hover:to-brand-600">+ Add Trade</Link>
         </div>
 
@@ -191,9 +194,9 @@ const exportData = (format) => {
                         <p class="text-sm font-semibold" :class="Number(item.profit_loss) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="item.profit_loss" show-plus /></p>
                     </div>
                     <div class="flex gap-2">
-                        <Link :href="route('trades.show', item.id)" class="rounded border px-2 py-1 text-xs">Detail</Link>
-                        <Link :href="route('trades.edit', item.id)" class="rounded border px-2 py-1 text-xs">Edit</Link>
-                        <Link :href="route('trades.destroy', item.id)" method="delete" as="button" class="rounded border border-red-200 px-2 py-1 text-xs text-red-600">Delete</Link>
+                        <Link :href="route('trades.show', item.id)" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50">Detail</Link>
+                        <Link :href="route('trades.edit', item.id)" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50">Edit</Link>
+                        <Link :href="route('trades.destroy', item.id)" method="delete" as="button" class="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100">Delete</Link>
                     </div>
                 </AppCard>
             </div>
@@ -224,9 +227,9 @@ const exportData = (format) => {
                         <td class="px-3 py-2" :class="Number(item.profit_loss) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="item.profit_loss" show-plus /></td>
                         <td class="px-3 py-2">
                             <div class="flex gap-2">
-                                <Link :href="route('trades.show', item.id)" class="rounded border px-2 py-1 text-xs">Detail</Link>
-                                <Link :href="route('trades.edit', item.id)" class="rounded border px-2 py-1 text-xs">Edit</Link>
-                                <Link :href="route('trades.destroy', item.id)" method="delete" as="button" class="rounded border border-red-200 px-2 py-1 text-xs text-red-600">Delete</Link>
+                                <Link :href="route('trades.show', item.id)" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50">Detail</Link>
+                                <Link :href="route('trades.edit', item.id)" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50">Edit</Link>
+                                <Link :href="route('trades.destroy', item.id)" method="delete" as="button" class="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100">Delete</Link>
                             </div>
                         </td>
                     </tr>

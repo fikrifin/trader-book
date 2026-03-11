@@ -109,7 +109,10 @@ const runDelete = () => {
     <Head title="Accounts" />
 
     <AppLayout>
-        <h1 class="mb-4 text-xl font-semibold text-gray-900">Trading Accounts</h1>
+        <div class="mb-4">
+            <h1 class="text-xl font-semibold text-gray-900">Trading Accounts</h1>
+            <p class="text-xs text-gray-500">Kelola akun live, demo, dan prop dalam satu tempat.</p>
+        </div>
 
         <AppCard class="mb-6" hoverable>
             <h2 class="mb-3 text-sm font-semibold">Tambah Account</h2>
@@ -173,14 +176,14 @@ const runDelete = () => {
                         </td>
                         <td class="px-3 py-2">
                             <div class="flex gap-2">
-                                <Link :href="route('accounts.switch')" method="post" as="button" :data="{ trading_account_id: item.id }" class="rounded border px-2 py-1 text-xs">Set Active</Link>
+                                <Link :href="route('accounts.switch')" method="post" as="button" :data="{ trading_account_id: item.id }" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50">Set Active</Link>
                                 <template v-if="editingId === item.id">
-                                    <button type="button" class="rounded border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700" @click="submitEdit">Save</button>
-                                    <button type="button" class="rounded border px-2 py-1 text-xs" @click="cancelEdit">Cancel</button>
+                                    <button type="button" class="rounded-md border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700 transition hover:bg-green-100" @click="submitEdit">Save</button>
+                                    <button type="button" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50" @click="cancelEdit">Cancel</button>
                                 </template>
                                 <template v-else>
-                                    <button type="button" class="rounded border px-2 py-1 text-xs" @click="startEdit(item)">Edit</button>
-                                    <button type="button" class="rounded border border-red-200 px-2 py-1 text-xs text-red-600" @click="confirmDelete(item.id)">Delete</button>
+                                    <button type="button" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50" @click="startEdit(item)">Edit</button>
+                                    <button type="button" class="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100" @click="confirmDelete(item.id)">Delete</button>
                                 </template>
                             </div>
                         </td>

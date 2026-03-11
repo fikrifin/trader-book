@@ -55,7 +55,10 @@ const createJournal = () => {
 
     <AppLayout>
         <div class="mb-4 flex items-center justify-between">
-            <h1 class="text-xl font-semibold text-gray-900">Daily Journal</h1>
+            <div>
+                <h1 class="text-xl font-semibold text-gray-900">Daily Journal</h1>
+                <p class="text-xs text-gray-500">Catat rencana, emosi, dan evaluasi trading harian.</p>
+            </div>
             <div class="flex gap-2">
                 <AppButton :variant="viewMode === 'calendar' ? 'primary' : 'secondary'" @click="viewMode = 'calendar'">Calendar</AppButton>
                 <AppButton :variant="viewMode === 'list' ? 'primary' : 'secondary'" @click="viewMode = 'list'">List</AppButton>
@@ -63,13 +66,13 @@ const createJournal = () => {
         </div>
 
         <AppCard class="mb-4" hoverable>
-        <div class="grid gap-3 md:grid-cols-4">
-            <AppInput v-model="filters.month" type="month" label="Month" />
-            <AppSelect v-model="filters.account_id" label="Account" :options="accountOptions" />
-            <div class="flex items-end">
-                <AppButton @click="applyFilters">Apply</AppButton>
+            <div class="grid gap-3 md:grid-cols-4">
+                <AppInput v-model="filters.month" type="month" label="Month" />
+                <AppSelect v-model="filters.account_id" label="Account" :options="accountOptions" />
+                <div class="flex items-end">
+                    <AppButton @click="applyFilters">Apply</AppButton>
+                </div>
             </div>
-        </div>
         </AppCard>
 
         <AppCard class="mb-4" hoverable>
@@ -82,11 +85,11 @@ const createJournal = () => {
             <div class="mt-3 grid gap-3 md:grid-cols-2">
                 <label class="block">
                     <span class="mb-1 block text-sm font-medium text-gray-700">Plan</span>
-                    <textarea v-model="form.plan" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                    <textarea v-model="form.plan" rows="3" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors duration-150 hover:border-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
                 </label>
                 <label class="block">
                     <span class="mb-1 block text-sm font-medium text-gray-700">Review</span>
-                    <textarea v-model="form.review" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                    <textarea v-model="form.review" rows="3" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors duration-150 hover:border-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
                 </label>
             </div>
             <label class="mt-3 inline-flex items-center gap-2 text-sm text-gray-700">
@@ -129,26 +132,28 @@ const createJournal = () => {
         </AppCard>
 
         <template v-if="journals?.data?.length && viewMode === 'list'">
-            <AppTable>
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-3 py-2 text-left">Date</th>
-                        <th class="px-3 py-2 text-left">Account</th>
-                        <th class="px-3 py-2 text-left">Mood</th>
-                        <th class="px-3 py-2 text-left">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y">
-                    <tr v-for="item in journals.data" :key="item.id">
-                        <td class="px-3 py-2">{{ item.date }}</td>
-                        <td class="px-3 py-2">{{ item.trading_account?.name || item.trading_account_id }}</td>
-                        <td class="px-3 py-2">{{ item.mood_before || '-' }}</td>
-                        <td class="px-3 py-2">
-                            <Link :href="route('journals.show', item.id)" class="rounded border px-2 py-1 text-xs">Detail</Link>
-                        </td>
-                    </tr>
-                </tbody>
-            </AppTable>
+            <AppCard class="mb-4" hoverable>
+                <AppTable>
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left">Date</th>
+                            <th class="px-3 py-2 text-left">Account</th>
+                            <th class="px-3 py-2 text-left">Mood</th>
+                            <th class="px-3 py-2 text-left">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr v-for="item in journals.data" :key="item.id" class="transition-colors hover:bg-gray-50/80">
+                            <td class="px-3 py-2">{{ item.date }}</td>
+                            <td class="px-3 py-2">{{ item.trading_account?.name || item.trading_account_id }}</td>
+                            <td class="px-3 py-2">{{ item.mood_before || '-' }}</td>
+                            <td class="px-3 py-2">
+                                <Link :href="route('journals.show', item.id)" class="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 transition hover:bg-gray-50">Detail</Link>
+                            </td>
+                        </tr>
+                    </tbody>
+                </AppTable>
+            </AppCard>
             <AppPagination :links="journals.links" />
         </template>
 
