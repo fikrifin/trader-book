@@ -2,6 +2,7 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AppCalendar from '@/Components/UI/AppCalendar.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
+import AppCard from '@/Components/UI/AppCard.vue';
 import AppCurrencyDisplay from '@/Components/UI/AppCurrencyDisplay.vue';
 import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
 import AppInput from '@/Components/UI/AppInput.vue';
@@ -61,15 +62,17 @@ const createJournal = () => {
             </div>
         </div>
 
-        <div class="mb-4 grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4">
+        <AppCard class="mb-4" hoverable>
+        <div class="grid gap-3 md:grid-cols-4">
             <AppInput v-model="filters.month" type="month" label="Month" />
             <AppSelect v-model="filters.account_id" label="Account" :options="accountOptions" />
             <div class="flex items-end">
                 <AppButton @click="applyFilters">Apply</AppButton>
             </div>
         </div>
+        </AppCard>
 
-        <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
+        <AppCard class="mb-4" hoverable>
             <h2 class="mb-3 text-sm font-semibold">Create / Upsert Journal</h2>
             <div class="grid gap-3 md:grid-cols-3">
                 <AppSelect v-model="form.trading_account_id" label="Account" :options="accountOptions" :error="form.errors.trading_account_id" />
@@ -93,9 +96,9 @@ const createJournal = () => {
             <div class="mt-3">
                 <AppButton :loading="form.processing" @click="createJournal">Save Journal</AppButton>
             </div>
-        </div>
+        </AppCard>
 
-        <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
+        <AppCard class="mb-4" hoverable>
             <h2 class="mb-3 text-sm font-semibold">Trade Summary by Date ({{ month }})</h2>
             <AppTable v-if="trade_summary?.length && viewMode === 'list'">
                 <thead class="bg-gray-50">
@@ -123,7 +126,7 @@ const createJournal = () => {
                 <template #title>Belum ada trade di bulan ini</template>
                 Summary akan tampil setelah ada trade.
             </AppEmptyState>
-        </div>
+        </AppCard>
 
         <template v-if="journals?.data?.length && viewMode === 'list'">
             <AppTable>

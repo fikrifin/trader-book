@@ -1,6 +1,8 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
+import AppCard from '@/Components/UI/AppCard.vue';
+import AppCurrencyDisplay from '@/Components/UI/AppCurrencyDisplay.vue';
 import AppInput from '@/Components/UI/AppInput.vue';
 import AppModal from '@/Components/UI/AppModal.vue';
 import AppSelect from '@/Components/UI/AppSelect.vue';
@@ -109,7 +111,7 @@ const runDelete = () => {
     <AppLayout>
         <h1 class="mb-4 text-xl font-semibold text-gray-900">Trading Accounts</h1>
 
-        <div class="mb-6 rounded-lg bg-white p-4 shadow-sm">
+        <AppCard class="mb-6" hoverable>
             <h2 class="mb-3 text-sm font-semibold">Tambah Account</h2>
             <div class="grid gap-3 md:grid-cols-3">
                 <AppInput v-model="createForm.name" label="Name" :error="createForm.errors.name" />
@@ -126,7 +128,7 @@ const runDelete = () => {
             <div class="mt-3">
                 <AppButton :loading="createForm.processing" @click="save">Simpan Account</AppButton>
             </div>
-        </div>
+        </AppCard>
 
         <template v-if="accounts?.data?.length">
             <AppTable>
@@ -140,7 +142,7 @@ const runDelete = () => {
                     </tr>
                 </thead>
                 <tbody class="divide-y">
-                    <tr v-for="item in accounts.data" :key="item.id">
+                    <tr v-for="item in accounts.data" :key="item.id" class="transition-colors hover:bg-gray-50/80">
                         <td class="px-3 py-2">
                             <template v-if="editingId === item.id">
                                 <AppInput v-model="editForm.name" :error="editForm.errors.name" />
@@ -161,7 +163,7 @@ const runDelete = () => {
                             <template v-if="editingId === item.id">
                                 <AppInput v-model="editForm.initial_balance" type="number" :error="editForm.errors.initial_balance" />
                             </template>
-                            <template v-else>{{ item.current_balance }}</template>
+                            <template v-else><AppCurrencyDisplay :value="item.current_balance" /></template>
                         </td>
                         <td class="px-3 py-2">
                             <template v-if="editingId === item.id">
@@ -173,7 +175,7 @@ const runDelete = () => {
                             <div class="flex gap-2">
                                 <Link :href="route('accounts.switch')" method="post" as="button" :data="{ trading_account_id: item.id }" class="rounded border px-2 py-1 text-xs">Set Active</Link>
                                 <template v-if="editingId === item.id">
-                                    <button type="button" class="rounded border border-green-200 px-2 py-1 text-xs text-green-700" @click="submitEdit">Save</button>
+                                    <button type="button" class="rounded border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700" @click="submitEdit">Save</button>
                                     <button type="button" class="rounded border px-2 py-1 text-xs" @click="cancelEdit">Cancel</button>
                                 </template>
                                 <template v-else>
@@ -193,8 +195,7 @@ const runDelete = () => {
             Tambahkan account trading pertama Anda.
         </AppEmptyState>
 
-        <AppModal :show="Boolean(deletingId)" @close="deletingId = null">
-            <h3 class="text-lg font-semibold text-gray-900">Hapus Account?</h3>
+        <AppModal :show="Boolean(deletingId)" title="Hapus Account?" @close="deletingId = null">
             <p class="mt-2 text-sm text-gray-600">Tindakan ini tidak bisa dibatalkan.</p>
             <div class="mt-4 flex justify-end gap-2">
                 <AppButton variant="secondary" @click="deletingId = null">Batal</AppButton>

@@ -10,6 +10,7 @@ const props = defineProps({
 });
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const todayIso = new Date().toISOString().slice(0, 10);
 
 const summaryMap = computed(() => {
     const map = new Map();
@@ -58,6 +59,28 @@ const cells = computed(() => {
 
     return values;
 });
+
+const maxAbsPl = computed(() => {
+    return Math.max(
+        1,
+        ...(props.tradeSummary || []).map((item) => Math.abs(Number(item.total_pl || 0))),
+    );
+});
+
+const cellClass = (cell) => {
+    if (!cell) return 'bg-transparent border-transparent';
+    if (!cell.summary) return 'bg-white';
+
+    const totalPl = Number(cell.summary.total_pl || 0);
+    if (totalPl === 0) return 'bg-gray-50';
+
+    const intensity = Math.min(Math.abs(totalPl) / maxAbsPl.value, 1);
+    if (totalPl > 0) {
+        return intensity > 0.6 ? 'bg-emerald-200/80' : 'bg-emerald-100/80';
+    }
+
+    return intensity > 0.6 ? 'bg-red-200/80' : 'bg-red-100/80';
+};
 </script>
 
 <template>
@@ -72,8 +95,8 @@ const cells = computed(() => {
             <div
                 v-for="(cell, index) in cells"
                 :key="`cell-${index}`"
-                class="min-h-24 rounded-md border border-gray-100 p-2"
-                :class="cell ? 'bg-gray-50' : 'bg-transparent border-transparent'"
+                class="min-h-24 rounded-md border border-gray-100 p-2 transition hover:z-10 hover:cursor-pointer hover:ring-2 hover:ring-brand-400"
+                :class="[cellClass(cell), cell?.iso === todayIso ? 'ring-2 ring-brand-400' : '']"
             >
                 <template v-if="cell">
                     <div class="mb-1 flex items-center justify-between">

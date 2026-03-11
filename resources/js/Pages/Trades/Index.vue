@@ -3,10 +3,12 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
 import AppBadge from '@/Components/UI/AppBadge.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
+import AppCard from '@/Components/UI/AppCard.vue';
 import AppCurrencyDisplay from '@/Components/UI/AppCurrencyDisplay.vue';
 import AppInput from '@/Components/UI/AppInput.vue';
 import AppPagination from '@/Components/UI/AppPagination.vue';
 import AppSelect from '@/Components/UI/AppSelect.vue';
+import AppSkeleton from '@/Components/UI/AppSkeleton.vue';
 import AppTable from '@/Components/UI/AppTable.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
@@ -39,6 +41,19 @@ const filterOpen = ref(Boolean(
     || filtersForm.direction
     || filtersForm.account_id
 ));
+const isFiltering = ref(false);
+
+const activeFilterCount = computed(() => {
+    const values = Object.values(filtersForm);
+    return values.filter((item) => String(item || '').trim() !== '').length;
+});
+
+const dateRangeSummary = computed(() => {
+    if (!filtersForm.date_from && !filtersForm.date_to) return '';
+    if (filtersForm.date_from && filtersForm.date_to) return `Showing trades from ${filtersForm.date_from} to ${filtersForm.date_to}`;
+    if (filtersForm.date_from) return `Showing trades from ${filtersForm.date_from}`;
+    return `Showing trades until ${filtersForm.date_to}`;
+});
 
 const listSummary = computed(() => {
     const rows = props.trades?.data || [];
@@ -54,7 +69,14 @@ const listSummary = computed(() => {
 });
 
 const applyFilters = () => {
-    router.get(route('trades.index'), filtersForm, { preserveState: true, preserveScroll: true });
+    isFiltering.value = true;
+    router.get(route('trades.index'), filtersForm, {
+        preserveState: true,
+        preserveScroll: true,
+        onFinish: () => {
+            isFiltering.value = false;
+        },
+    });
 };
 
 const clearFilters = () => {
@@ -82,14 +104,15 @@ const exportData = (format) => {
     <AppLayout>
         <div class="mb-4 flex items-center justify-between">
             <h1 class="text-xl font-semibold text-gray-900">Trades</h1>
-            <Link :href="route('trades.create')" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white">+ Add Trade</Link>
+            <Link :href="route('trades.create')" class="inline-flex items-center rounded-lg bg-gradient-to-r from-brand-600 to-brand-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-brand-700 hover:to-brand-600">+ Add Trade</Link>
         </div>
 
-        <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
+        <AppCard class="mb-4" hoverable>
             <div class="mb-3 flex items-center justify-between">
                 <p class="text-sm font-semibold text-gray-700">Filter Trades</p>
                 <button type="button" class="text-xs font-medium text-brand-600" @click="filterOpen = !filterOpen">
                     {{ filterOpen ? 'Hide Filters' : 'Show Filters' }}
+                    <span v-if="activeFilterCount > 0" class="ml-1 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">{{ activeFilterCount }}</span>
                 </button>
             </div>
 
@@ -125,28 +148,39 @@ const exportData = (format) => {
                 <AppButton variant="ghost" @click="exportData('xlsx')">Export Excel</AppButton>
             </div>
             </div>
-        </div>
+        </AppCard>
+
+        <p v-if="dateRangeSummary" class="mb-3 text-xs font-medium text-gray-500">{{ dateRangeSummary }}</p>
 
         <div class="mb-4 grid gap-3 md:grid-cols-3">
-            <div class="rounded-lg bg-white p-3 shadow-sm">
+            <AppCard padding="sm" hoverable>
                 <p class="text-xs uppercase text-gray-500">Visible Trades</p>
                 <p class="mt-1 text-lg font-semibold text-gray-900">{{ listSummary.total }}</p>
-            </div>
-            <div class="rounded-lg bg-white p-3 shadow-sm">
+            </AppCard>
+            <AppCard padding="sm" hoverable>
                 <p class="text-xs uppercase text-gray-500">Win Rate</p>
                 <p class="mt-1 text-lg font-semibold text-gray-900">{{ listSummary.winRate }}%</p>
-            </div>
-            <div class="rounded-lg bg-white p-3 shadow-sm">
+            </AppCard>
+            <AppCard padding="sm" hoverable>
                 <p class="text-xs uppercase text-gray-500">Net P/L</p>
                 <p class="mt-1 text-lg font-semibold" :class="Number(listSummary.netPl) >= 0 ? 'text-green-600' : 'text-red-600'">
                     <AppCurrencyDisplay :value="listSummary.netPl" show-plus />
                 </p>
-            </div>
+            </AppCard>
         </div>
 
-        <template v-if="trades?.data?.length">
+        <div v-if="isFiltering" class="mb-4">
+            <AppSkeleton variant="table-row" :lines="5" />
+        </div>
+
+        <template v-else-if="trades?.data?.length">
             <div class="space-y-3 md:hidden">
-                <div v-for="item in trades.data" :key="`card-${item.id}`" class="rounded-lg bg-white p-4 shadow-sm">
+                <AppCard
+                    v-for="item in trades.data"
+                    :key="`card-${item.id}`"
+                    hoverable
+                    :class="item.result === 'win' ? 'bg-emerald-50/20' : (item.result === 'loss' ? 'bg-red-50/20' : '')"
+                >
                     <div class="mb-2 flex items-center justify-between">
                         <p class="text-sm font-semibold text-gray-900">{{ item.pair }}</p>
                         <AppBadge :variant="item.result === 'win' ? 'win' : (item.result === 'loss' ? 'loss' : (item.result === 'breakeven' ? 'breakeven' : 'partial'))">{{ item.result }}</AppBadge>
@@ -161,7 +195,7 @@ const exportData = (format) => {
                         <Link :href="route('trades.edit', item.id)" class="rounded border px-2 py-1 text-xs">Edit</Link>
                         <Link :href="route('trades.destroy', item.id)" method="delete" as="button" class="rounded border border-red-200 px-2 py-1 text-xs text-red-600">Delete</Link>
                     </div>
-                </div>
+                </AppCard>
             </div>
 
             <AppTable class="hidden md:block">
@@ -177,7 +211,7 @@ const exportData = (format) => {
                     </tr>
                 </thead>
                 <tbody class="divide-y">
-                    <tr v-for="item in trades.data" :key="item.id">
+                    <tr v-for="item in trades.data" :key="item.id" class="transition-colors hover:bg-gray-50/80" :class="item.result === 'win' ? 'bg-emerald-50/20' : (item.result === 'loss' ? 'bg-red-50/20' : '')">
                         <td class="px-3 py-2">{{ item.date }}</td>
                         <td class="px-3 py-2">{{ item.pair }}</td>
                         <td class="px-3 py-2">
