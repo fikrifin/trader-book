@@ -1,0 +1,141 @@
+<script setup>
+import AppLayout from '@/Layouts/AppLayout.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
+import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppPagination from '@/Components/UI/AppPagination.vue';
+import AppSelect from '@/Components/UI/AppSelect.vue';
+import AppTable from '@/Components/UI/AppTable.vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
+
+const props = defineProps({
+    journals: Object,
+    month: String,
+    trade_summary: Array,
+    accounts: Array,
+    active_account_id: Number,
+});
+
+const filters = reactive({
+    month: props.month,
+    account_id: props.active_account_id || '',
+});
+
+const accountOptions = computed(() => (props.accounts || []).map((item) => ({
+    value: item.id,
+    label: `${item.name} (${item.account_type})`,
+})));
+
+const applyFilters = () => {
+    router.get(route('journals.index'), filters, { preserveState: true, preserveScroll: true });
+};
+
+const form = useForm({
+    trading_account_id: props.active_account_id || '',
+    date: new Date().toISOString().slice(0, 10),
+    mood_before: '',
+    plan: '',
+    review: '',
+    followed_risk_rules: false,
+});
+
+const createJournal = () => {
+    form.post(route('journals.store'), { preserveScroll: true });
+};
+</script>
+
+<template>
+    <Head title="Journal" />
+
+    <AppLayout>
+        <h1 class="mb-4 text-xl font-semibold text-gray-900">Daily Journal</h1>
+
+        <div class="mb-4 grid gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4">
+            <AppInput v-model="filters.month" type="month" label="Month" />
+            <AppSelect v-model="filters.account_id" label="Account" :options="accountOptions" />
+            <div class="flex items-end">
+                <AppButton @click="applyFilters">Apply</AppButton>
+            </div>
+        </div>
+
+        <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
+            <h2 class="mb-3 text-sm font-semibold">Create / Upsert Journal</h2>
+            <div class="grid gap-3 md:grid-cols-3">
+                <AppSelect v-model="form.trading_account_id" label="Account" :options="accountOptions" :error="form.errors.trading_account_id" />
+                <AppInput v-model="form.date" type="date" label="Date" :error="form.errors.date" />
+                <AppInput v-model="form.mood_before" type="number" label="Mood (1-5)" :error="form.errors.mood_before" />
+            </div>
+            <div class="mt-3 grid gap-3 md:grid-cols-2">
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Plan</span>
+                    <textarea v-model="form.plan" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Review</span>
+                    <textarea v-model="form.review" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                </label>
+            </div>
+            <label class="mt-3 inline-flex items-center gap-2 text-sm text-gray-700">
+                <input v-model="form.followed_risk_rules" type="checkbox" class="rounded border-gray-300" />
+                Followed risk rules
+            </label>
+            <div class="mt-3">
+                <AppButton :loading="form.processing" @click="createJournal">Save Journal</AppButton>
+            </div>
+        </div>
+
+        <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
+            <h2 class="mb-3 text-sm font-semibold">Trade Summary by Date ({{ month }})</h2>
+            <AppTable v-if="trade_summary?.length">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Date</th>
+                        <th class="px-3 py-2 text-left">Trades</th>
+                        <th class="px-3 py-2 text-left">Total P/L</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    <tr v-for="item in trade_summary" :key="item.date">
+                        <td class="px-3 py-2">{{ item.date }}</td>
+                        <td class="px-3 py-2">{{ item.trade_count }}</td>
+                        <td class="px-3 py-2" :class="Number(item.total_pl) >= 0 ? 'text-green-600' : 'text-red-600'">{{ item.total_pl }}</td>
+                    </tr>
+                </tbody>
+            </AppTable>
+            <AppEmptyState v-else>
+                <template #title>Belum ada trade di bulan ini</template>
+                Summary akan tampil setelah ada trade.
+            </AppEmptyState>
+        </div>
+
+        <template v-if="journals?.data?.length">
+            <AppTable>
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Date</th>
+                        <th class="px-3 py-2 text-left">Account</th>
+                        <th class="px-3 py-2 text-left">Mood</th>
+                        <th class="px-3 py-2 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    <tr v-for="item in journals.data" :key="item.id">
+                        <td class="px-3 py-2">{{ item.date }}</td>
+                        <td class="px-3 py-2">{{ item.trading_account?.name || item.trading_account_id }}</td>
+                        <td class="px-3 py-2">{{ item.mood_before || '-' }}</td>
+                        <td class="px-3 py-2">
+                            <Link :href="route('journals.show', item.id)" class="rounded border px-2 py-1 text-xs">Detail</Link>
+                        </td>
+                    </tr>
+                </tbody>
+            </AppTable>
+            <AppPagination :links="journals.links" />
+        </template>
+
+        <AppEmptyState v-else>
+            <template #title>Belum ada journal</template>
+            Buat journal harian pertama Anda.
+        </AppEmptyState>
+    </AppLayout>
+</template>
