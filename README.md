@@ -7,6 +7,59 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Docker Setup
+
+Project ini sudah disiapkan untuk dijalankan via Docker (PHP-FPM + Nginx + MySQL + Node/Vite + phpMyAdmin).
+
+### 1. Siapkan environment
+
+```bash
+cp .env.docker.example .env
+```
+
+### 2. Build dan jalankan container
+
+```bash
+docker compose up -d --build
+```
+
+### 3. Install dependency backend dan generate app key
+
+```bash
+docker compose exec app composer install
+docker compose exec app php artisan key:generate
+```
+
+### 4. Jalankan migrasi
+
+```bash
+docker compose exec app php artisan migrate
+```
+
+### 5. Install dependency frontend (sekali saja)
+
+Node service sudah otomatis menjalankan `npm install` dan `npm run dev` saat start.
+
+Jika ingin manual:
+
+```bash
+docker compose exec node npm install
+```
+
+### URL service
+
+- Aplikasi: http://localhost:8000
+- Vite dev server: http://localhost:5173
+- phpMyAdmin: http://localhost:8080
+
+### Command berguna
+
+```bash
+docker compose logs -f
+docker compose down
+docker compose down -v
+```
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

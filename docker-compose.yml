@@ -1,0 +1,87 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: trader-book-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - trader-book
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: trader-book-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - trader-book
+
+  db:
+    image: mysql:8.4
+    container_name: trader-book-db
+    restart: unless-stopped
+    ports:
+      - "33061:3306"
+    environment:
+      MYSQL_DATABASE: trader_book
+      MYSQL_USER: trader
+      MYSQL_PASSWORD: traderpass
+      MYSQL_ROOT_PASSWORD: rootpass
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - trader-book
+
+  node:
+    image: node:20-alpine
+    container_name: trader-book-node
+    working_dir: /var/www/html
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - app
+    networks:
+      - trader-book
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: trader-book-pma
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: rootpass
+    depends_on:
+      - db
+    networks:
+      - trader-book
+
+volumes:
+  dbdata:
+
+networks:
+  trader-book:
+    driver: bridge
