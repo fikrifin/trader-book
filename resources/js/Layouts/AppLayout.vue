@@ -82,7 +82,7 @@ const toggleMobileSettings = () => {
         <AppToast />
 
         <div class="min-h-screen lg:pl-72">
-            <aside class="fixed inset-y-0 left-0 z-30 hidden w-72 overflow-y-auto bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 p-4 text-white lg:block">
+            <aside class="fixed inset-y-0 left-0 z-30 hidden w-72 overflow-y-auto bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 p-4 text-white lg:flex lg:flex-col">
                 <div class="mb-4 flex items-center gap-2 text-lg font-bold">
                     <div class="rounded-lg bg-brand-500/20 p-1.5 text-brand-300 ring-1 ring-brand-400/30">
                         <ChartBarIcon class="size-4" />
@@ -141,7 +141,7 @@ const toggleMobileSettings = () => {
                     </div>
                 </nav>
 
-                <div class="mt-8 border-t border-white/10 pt-4 text-xs text-gray-400">
+                <div class="mt-auto border-t border-white/10 pt-4 text-xs text-gray-400">
                     <div class="mb-2 flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-white/5">
                         <LifebuoyIcon class="size-4" />
                         Help
