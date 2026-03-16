@@ -106,7 +106,7 @@ watch(() => props.top_movers, (value) => {
 
 onMounted(() => {
     syncTopMoversPrices();
-    topMoverTimer = window.setInterval(syncTopMoversPrices, 10000);
+    topMoverTimer = window.setInterval(syncTopMoversPrices, 60000);
 });
 
 onBeforeUnmount(() => {
