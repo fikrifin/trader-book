@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'twelvedata' => [
+        'key' => env('TWELVEDATA_API_KEY'),
+        'base_url' => env('TWELVEDATA_BASE_URL', 'https://api.twelvedata.com'),
+        'retry_times' => (int) env('TWELVEDATA_RETRY_TIMES', 3),
+        'retry_sleep_ms' => (int) env('TWELVEDATA_RETRY_SLEEP_MS', 300),
+        'alert_failed_threshold' => (int) env('TWELVEDATA_ALERT_FAILED_THRESHOLD', 10),
+        'sync_keywords' => env('TWELVEDATA_SYNC_KEYWORDS', 'XAU,BTC,ETH,EUR,JPY,SPX,AAPL,TSLA,NASDAQ,DOW'),
+        'sync_limit' => (int) env('TWELVEDATA_SYNC_LIMIT', 20),
+    ],
+
 ];

@@ -60,6 +60,61 @@ docker compose down
 docker compose down -v
 ```
 
+## Twelve Data Integration
+
+Fitur Instruments mendukung sinkronisasi otomatis dan harga realtime dari Twelve Data.
+
+### Environment
+
+Tambahkan API key di `.env`:
+
+```bash
+TWELVEDATA_API_KEY=your_api_key_here
+TWELVEDATA_BASE_URL=https://api.twelvedata.com
+TWELVEDATA_RETRY_TIMES=3
+TWELVEDATA_RETRY_SLEEP_MS=300
+TWELVEDATA_ALERT_FAILED_THRESHOLD=10
+TWELVEDATA_SYNC_KEYWORDS=XAU,BTC,ETH,EUR,JPY,SPX,AAPL,TSLA,NASDAQ,DOW
+TWELVEDATA_SYNC_LIMIT=20
+```
+
+### Sync Manual (Semua User)
+
+```bash
+php artisan instruments:sync-twelvedata
+```
+
+Contoh custom keyword:
+
+```bash
+php artisan instruments:sync-twelvedata --keywords=BTC,ETH,XAU --limit=15 --category=crypto
+```
+
+### Scheduler
+
+Task otomatis via Laravel Scheduler:
+
+- `instruments:sync-twelvedata` setiap hari jam 06:00
+- `instruments:refresh-prices` setiap 10 menit
+
+Untuk development, jalankan scheduler worker:
+
+```bash
+php artisan schedule:work
+```
+
+Refresh harga manual kapan saja:
+
+```bash
+php artisan instruments:refresh-prices
+```
+
+Lihat health metric provider:
+
+```bash
+php artisan instruments:twelvedata-health
+```
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

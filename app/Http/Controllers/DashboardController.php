@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\MonthlyTarget;
+use App\Models\Instrument;
 use App\Models\Trade;
 use App\Models\TradingAccount;
 use App\Services\RiskRuleService;
 use App\Services\StatisticService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,7 +17,7 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $activeAccountId = $user?->active_account_id
             ?: TradingAccount::query()->forUser()->value('id');
@@ -86,6 +88,14 @@ class DashboardController extends Controller
             }
         }
 
+        $topMovers = Instrument::query()
+            ->forUser()
+            ->whereNotNull('last_price')
+            ->whereNotNull('price_change_pct')
+            ->orderByRaw('ABS(price_change_pct) DESC')
+            ->limit(6)
+            ->get(['id', 'symbol', 'name', 'last_price', 'price_change_pct', 'price_updated_at']);
+
         return Inertia::render('Dashboard/Index', [
             'today_summary' => [
                 'trade_count' => $todayTrades->count(),
@@ -102,6 +112,7 @@ class DashboardController extends Controller
             'recent_trades' => $recentTrades,
             'target_progress' => $targetProgress,
             'risk_status' => $riskStatus,
+            'top_movers' => $topMovers,
         ]);
     }
 }

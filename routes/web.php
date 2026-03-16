@@ -33,6 +33,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
         Route::resource('accounts', TradingAccountController::class)->except(['show']);
+        Route::post('instruments/sync', [InstrumentController::class, 'syncFromProvider'])->name('instruments.sync');
+        Route::get('instruments/prices', [InstrumentController::class, 'prices'])->name('instruments.prices');
         Route::resource('instruments', InstrumentController::class)->except(['show']);
         Route::resource('setups', SetupController::class)->except(['show']);
 

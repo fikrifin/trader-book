@@ -15,7 +15,8 @@ import {
     ShieldExclamationIcon,
 } from '@heroicons/vue/24/outline';
 import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import axios from 'axios';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
     today_summary: Object,
@@ -25,6 +26,7 @@ const props = defineProps({
     recent_trades: Array,
     target_progress: Object,
     risk_status: Object,
+    top_movers: Array,
 });
 
 const chartBaseOptions = {
@@ -63,6 +65,55 @@ const dailyPlChartData = computed(() => ({
         },
     ],
 }));
+
+const topMoversLive = ref([]);
+let topMoverTimer = null;
+
+const topMoverSymbols = computed(() => (topMoversLive.value || [])
+    .map((item) => item.symbol)
+    .filter(Boolean));
+
+const syncTopMoversPrices = async () => {
+    if (!topMoverSymbols.value.length) return;
+
+    try {
+        const response = await axios.get(route('settings.instruments.prices'), {
+            params: {
+                symbols: topMoverSymbols.value.join(','),
+            },
+        });
+
+        const prices = response?.data?.prices || {};
+
+        topMoversLive.value = topMoversLive.value.map((item) => {
+            const live = prices[item.symbol];
+            if (!live) return item;
+
+            return {
+                ...item,
+                last_price: live.price ?? item.last_price,
+                price_updated_at: live.updated_at ?? item.price_updated_at,
+            };
+        });
+    } catch (error) {
+        // Keep existing cached dashboard values when sync fails.
+    }
+};
+
+watch(() => props.top_movers, (value) => {
+    topMoversLive.value = Array.isArray(value) ? [...value] : [];
+}, { immediate: true });
+
+onMounted(() => {
+    syncTopMoversPrices();
+    topMoverTimer = window.setInterval(syncTopMoversPrices, 10000);
+});
+
+onBeforeUnmount(() => {
+    if (topMoverTimer) {
+        window.clearInterval(topMoverTimer);
+    }
+});
 </script>
 
 <template>
@@ -155,6 +206,37 @@ const dailyPlChartData = computed(() => ({
                 <AppChart type="bar" :data="dailyPlChartData" :options="chartBaseOptions" height-class="h-64" />
             </AppCard>
         </div>
+
+        <AppCard class="mt-4" hoverable>
+            <div class="mb-2 flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-700">Top Movers (Cached Price)</p>
+                <span class="text-xs text-gray-500">Berdasarkan perubahan % terbesar</span>
+            </div>
+
+            <AppTable v-if="topMoversLive?.length">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Symbol</th>
+                        <th class="px-3 py-2 text-left">Name</th>
+                        <th class="px-3 py-2 text-left">Last Price</th>
+                        <th class="px-3 py-2 text-left">Change %</th>
+                        <th class="px-3 py-2 text-left">Updated</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    <tr v-for="item in topMoversLive" :key="item.id">
+                        <td class="px-3 py-2 font-medium text-gray-900">{{ item.symbol }}</td>
+                        <td class="px-3 py-2">{{ item.name }}</td>
+                        <td class="px-3 py-2">{{ Number(item.last_price || 0).toLocaleString('en-US', { maximumFractionDigits: 6 }) }}</td>
+                        <td class="px-3 py-2" :class="Number(item.price_change_pct || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'">
+                            {{ Number(item.price_change_pct || 0).toFixed(4) }}%
+                        </td>
+                        <td class="px-3 py-2 text-xs text-gray-500">{{ item.price_updated_at || '-' }}</td>
+                    </tr>
+                </tbody>
+            </AppTable>
+            <p v-else class="text-sm text-gray-500">Belum ada data perubahan harga. Buka halaman Instruments untuk memicu update harga.</p>
+        </AppCard>
 
         <AppCard class="mt-4" hoverable>
             <p class="mb-2 text-sm font-medium text-gray-700">Recent Trades</p>
