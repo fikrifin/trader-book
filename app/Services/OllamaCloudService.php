@@ -24,9 +24,19 @@ class OllamaCloudService
             throw new RuntimeException('OLLAMA_API_KEY belum dikonfigurasi.');
         }
 
+        $model = (string) config('services.ollama.model', 'gpt-oss:120b');
+
+        // Cloud models often return richer reasoning payloads on /api/chat; /api/generate is usually more stable for plain text output.
+        if (str_contains($model, ':cloud')) {
+            $primary = $this->generateFallback($messages);
+            if (filled($primary['content'] ?? null)) {
+                return $primary;
+            }
+        }
+
         $startedAt = microtime(true);
         $response = $this->requestWithRetry('/api/chat', [
-            'model' => config('services.ollama.model', 'gpt-oss:120b'),
+            'model' => $model,
             'stream' => false,
             'think' => false,
             'messages' => $messages,
@@ -108,6 +118,7 @@ class OllamaCloudService
     protected function extractAssistantContent(array $payload): ?string
     {
         $candidates = [
+            data_get($payload, 'message'),
             data_get($payload, 'message.content'),
             data_get($payload, 'message.thinking'),
             data_get($payload, 'message.reasoning'),
@@ -174,7 +185,7 @@ class OllamaCloudService
 
         $startedAt = microtime(true);
         $response = $this->requestWithRetry('/api/generate', [
-            'model' => config('services.ollama.model', 'gpt-oss:120b'),
+            'model' => (string) config('services.ollama.model', 'gpt-oss:120b'),
             'stream' => false,
             'think' => false,
             'prompt' => $prompt,
@@ -194,9 +205,26 @@ class OllamaCloudService
             ? (data_get($payload, 'response')
                 ?: data_get($payload, 'content')
                 ?: data_get($payload, 'thinking')
+                ?: data_get($payload, 'message')
                 ?: data_get($payload, 'message.content')
                 ?: data_get($payload, 'message.thinking'))
             : null;
+
+        if (is_array($content)) {
+            $content = collect(Arr::wrap($content))
+                ->map(function ($part) {
+                    if (is_string($part)) {
+                        return $part;
+                    }
+
+                    if (is_array($part)) {
+                        return (string) ($part['text'] ?? $part['content'] ?? $part['thinking'] ?? '');
+                    }
+
+                    return '';
+                })
+                ->implode('');
+        }
 
         return [
             'content' => is_string($content) ? trim($content) : null,

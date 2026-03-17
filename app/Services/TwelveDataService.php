@@ -7,6 +7,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class TwelveDataService
 {
@@ -143,6 +144,193 @@ class TwelveDataService
         ];
     }
 
+    public function inferCategoryFromSymbolName(string $symbol, string $name = ''): string
+    {
+        $symbolNorm = strtoupper(trim($symbol));
+        $nameNorm = strtoupper(trim($name));
+        $combined = $symbolNorm.' '.$nameNorm;
+
+        if (str_contains($combined, 'XAU') || str_contains($combined, 'GOLD') || str_contains($combined, 'XAG') || str_contains($combined, 'SILVER')) {
+            return 'commodity';
+        }
+
+        if (str_contains($combined, 'BTC') || str_contains($combined, 'ETH') || str_contains($combined, 'USDT') || str_contains($combined, 'CRYPTO')) {
+            return 'crypto';
+        }
+
+        if (preg_match('/^[A-Z]{3}\/[A-Z]{3}$/', $symbolNorm) === 1) {
+            return 'forex';
+        }
+
+        if (str_contains($combined, 'INDEX') || str_contains($combined, 'NASDAQ') || str_contains($combined, 'SPX') || str_contains($combined, 'DOW')) {
+            return 'index';
+        }
+
+        return 'stock';
+    }
+
+    public function buildAiMarketContext(Instrument $instrument, string $timeframe): array
+    {
+        $warnings = [];
+        $qualityScore = 100;
+
+        $inferredCategory = $this->inferCategoryFromSymbolName($instrument->symbol, $instrument->name);
+        $identityConflict = $inferredCategory !== $instrument->category;
+
+        if ($identityConflict) {
+            $warnings[] = "Kategori instrument terdeteksi mismatch: {$instrument->category} vs inferred {$inferredCategory}.";
+            $qualityScore -= 35;
+        }
+
+        if (! $this->isConfigured()) {
+            $warnings[] = 'TWELVEDATA_API_KEY belum dikonfigurasi, data market terbatas cache lokal.';
+
+            return [
+                'identity' => [
+                    'stored_category' => $instrument->category,
+                    'inferred_category' => $inferredCategory,
+                    'identity_conflict' => $identityConflict,
+                ],
+                'snapshot' => [
+                    'last_price' => $instrument->last_price,
+                    'price_change_pct' => $instrument->price_change_pct,
+                    'price_updated_at' => optional($instrument->price_updated_at)->toDateTimeString(),
+                ],
+                'time_series' => null,
+                'volatility' => null,
+                'context_quality' => [
+                    'score' => max(0, $qualityScore - 40),
+                    'warnings' => $warnings,
+                ],
+            ];
+        }
+
+        try {
+            $interval = $this->mapTimeframeToInterval($timeframe);
+            $response = $this->requestWithRetry('/time_series', [
+                'symbol' => $instrument->symbol,
+                'interval' => $interval,
+                'outputsize' => 60,
+                'dp' => 6,
+            ]);
+
+            if (! $response->successful()) {
+                $warnings[] = 'Gagal memuat time series dari provider.';
+                $qualityScore -= 30;
+
+                return [
+                    'identity' => [
+                        'stored_category' => $instrument->category,
+                        'inferred_category' => $inferredCategory,
+                        'identity_conflict' => $identityConflict,
+                    ],
+                    'snapshot' => [
+                        'last_price' => $instrument->last_price,
+                        'price_change_pct' => $instrument->price_change_pct,
+                        'price_updated_at' => optional($instrument->price_updated_at)->toDateTimeString(),
+                    ],
+                    'time_series' => null,
+                    'volatility' => null,
+                    'context_quality' => [
+                        'score' => max(0, $qualityScore),
+                        'warnings' => $warnings,
+                    ],
+                ];
+            }
+
+            $payload = $response->json();
+            $values = collect($payload['values'] ?? [])->map(function (array $row) {
+                return [
+                    'datetime' => $row['datetime'] ?? null,
+                    'open' => isset($row['open']) ? (float) $row['open'] : null,
+                    'high' => isset($row['high']) ? (float) $row['high'] : null,
+                    'low' => isset($row['low']) ? (float) $row['low'] : null,
+                    'close' => isset($row['close']) ? (float) $row['close'] : null,
+                ];
+            })->filter(fn (array $row) => $row['close'] !== null)->values();
+
+            if ($values->count() < 20) {
+                $warnings[] = 'Data historical kurang dari 20 candle.';
+                $qualityScore -= 25;
+            }
+
+            $latest = $values->first();
+            $recent20 = $values->take(20)->values();
+            $recentCloses = $recent20->pluck('close')->filter();
+            $firstClose = (float) ($recent20->last()['close'] ?? 0);
+            $lastClose = (float) ($recent20->first()['close'] ?? 0);
+            $trendPct20 = $firstClose > 0 ? round((($lastClose - $firstClose) / $firstClose) * 100, 4) : null;
+
+            $returns = [];
+            for ($i = 0; $i < $recentCloses->count() - 1; $i++) {
+                $prev = (float) $recentCloses[$i + 1];
+                $curr = (float) $recentCloses[$i];
+                if ($prev > 0) {
+                    $returns[] = (($curr - $prev) / $prev) * 100;
+                }
+            }
+
+            $volatilityPct = null;
+            if (count($returns) >= 5) {
+                $mean = array_sum($returns) / count($returns);
+                $variance = array_sum(array_map(fn ($x) => ($x - $mean) ** 2, $returns)) / count($returns);
+                $volatilityPct = round(sqrt($variance), 4);
+            } else {
+                $warnings[] = 'Data return tidak cukup untuk menghitung volatilitas.';
+                $qualityScore -= 10;
+            }
+
+            return [
+                'identity' => [
+                    'stored_category' => $instrument->category,
+                    'inferred_category' => $inferredCategory,
+                    'identity_conflict' => $identityConflict,
+                ],
+                'snapshot' => [
+                    'provider_price' => $latest['close'] ?? null,
+                    'provider_time' => $latest['datetime'] ?? null,
+                    'last_price_cached' => $instrument->last_price,
+                    'price_change_pct_cached' => $instrument->price_change_pct,
+                ],
+                'time_series' => [
+                    'interval' => $interval,
+                    'candle_count' => $values->count(),
+                    'trend_pct_20' => $trendPct20,
+                    'high_20' => $recent20->pluck('high')->filter()->max(),
+                    'low_20' => $recent20->pluck('low')->filter()->min(),
+                ],
+                'volatility' => [
+                    'stddev_return_pct_20' => $volatilityPct,
+                ],
+                'context_quality' => [
+                    'score' => max(0, $qualityScore),
+                    'warnings' => $warnings,
+                ],
+            ];
+        } catch (Throwable $exception) {
+            $warnings[] = 'Gagal membangun market context: '.$exception->getMessage();
+
+            return [
+                'identity' => [
+                    'stored_category' => $instrument->category,
+                    'inferred_category' => $inferredCategory,
+                    'identity_conflict' => $identityConflict,
+                ],
+                'snapshot' => [
+                    'last_price' => $instrument->last_price,
+                    'price_change_pct' => $instrument->price_change_pct,
+                    'price_updated_at' => optional($instrument->price_updated_at)->toDateTimeString(),
+                ],
+                'time_series' => null,
+                'volatility' => null,
+                'context_quality' => [
+                    'score' => max(0, $qualityScore - 30),
+                    'warnings' => $warnings,
+                ],
+            ];
+        }
+    }
+
     protected function client()
     {
         $apiKey = (string) config('services.twelvedata.key');
@@ -209,6 +397,20 @@ class TwelveDataService
             str_contains($type, 'commodity') => 'commodity',
             str_contains($type, 'index') => 'index',
             default => 'stock',
+        };
+    }
+
+    protected function mapTimeframeToInterval(string $timeframe): string
+    {
+        return match (strtoupper(trim($timeframe))) {
+            'M1' => '1min',
+            'M5' => '5min',
+            'M15' => '15min',
+            'M30' => '30min',
+            'H1' => '1h',
+            'H4' => '4h',
+            'D1' => '1day',
+            default => '1h',
         };
     }
 }

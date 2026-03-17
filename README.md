@@ -115,6 +115,13 @@ Lihat health metric provider:
 php artisan instruments:twelvedata-health
 ```
 
+Normalisasi kategori instrument (jika sinkronisasi provider memberi kategori kurang tepat):
+
+```bash
+php artisan instruments:normalize-categories --dry-run
+php artisan instruments:normalize-categories
+```
+
 ## AI Recommendation (Ollama Cloud)
 
 Menu AI memungkinkan user memilih instrument tersimpan dan menghasilkan recommendation terstruktur (decision support).

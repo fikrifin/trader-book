@@ -14,6 +14,7 @@ class AiRecommendationService
     public function __construct(
         protected OllamaCloudService $ollamaCloudService,
         protected RiskRuleService $riskRuleService,
+        protected TwelveDataService $twelveDataService,
     ) {
     }
 
@@ -131,6 +132,8 @@ class AiRecommendationService
             ->get();
 
         $stats = new StatisticService($instrumentTrades);
+        $marketContext = $this->twelveDataService->buildAiMarketContext($instrument, $timeframe);
+        $effectiveCategory = data_get($marketContext, 'identity.inferred_category', $instrument->category);
 
         return [
             'time' => now()->toDateTimeString(),
@@ -139,11 +142,13 @@ class AiRecommendationService
                 'symbol' => $instrument->symbol,
                 'name' => $instrument->name,
                 'category' => $instrument->category,
+                'effective_category' => $effectiveCategory,
                 'timeframe' => $timeframe,
                 'last_price' => $instrument->last_price,
                 'price_change_pct' => $instrument->price_change_pct,
                 'price_updated_at' => optional($instrument->price_updated_at)->toDateTimeString(),
             ],
+            'market_snapshot' => $marketContext,
             'user_stats' => [
                 'instrument_trade_count' => $instrumentTrades->count(),
                 'win_rate' => $stats->winRate(),
@@ -167,6 +172,7 @@ class AiRecommendationService
         return 'Anda adalah asisten trading konservatif. Jawab hanya JSON valid tanpa markdown.'
             .' Gunakan field wajib: market_bias, recommended_action, entry_zone, stop_loss, take_profit, risk_pct, confidence, invalidation, rationale, checklist, warning.'
             .' Pilihan recommended_action: buy|sell|wait|no_trade. confidence rentang 0-100.'
+            .' Jika context_quality.score < 60 atau identity_conflict=true, wajib recommended_action=no_trade.'
             .' Jangan berikan kepastian profit dan hormati risk guardrails.';
     }
 
@@ -276,6 +282,24 @@ class AiRecommendationService
             $recommendation['recommended_action'] = 'no_trade';
             $recommendation['warning'] = 'Akun sedang blocked oleh risk rule.';
             $recommendation['confidence'] = 0;
+        }
+
+        $qualityScore = (int) data_get($context, 'market_snapshot.context_quality.score', 0);
+        $identityConflict = (bool) data_get($context, 'market_snapshot.identity.identity_conflict', false);
+
+        if ($qualityScore < 45) {
+            $recommendation['recommended_action'] = 'no_trade';
+            $recommendation['warning'] = 'Kualitas market context terlalu rendah, disarankan no_trade.';
+            $recommendation['confidence'] = min((float) ($recommendation['confidence'] ?? 0), 30);
+        }
+
+        if ($identityConflict) {
+            if (in_array($recommendation['recommended_action'], ['buy', 'sell'], true)) {
+                $recommendation['recommended_action'] = 'wait';
+            }
+
+            $recommendation['warning'] = 'Data instrument terdeteksi mismatch kategori. Gunakan inferred category sebagai referensi dan validasi manual sebelum entry.';
+            $recommendation['confidence'] = min((float) ($recommendation['confidence'] ?? 0), 55);
         }
 
         return $recommendation;
