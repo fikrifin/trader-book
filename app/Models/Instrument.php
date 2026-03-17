@@ -47,4 +47,9 @@ class Instrument extends Model
     {
         return $this->hasMany(Trade::class);
     }
+
+    public function aiRecommendations(): HasMany
+    {
+        return $this->hasMany(AiRecommendation::class);
+    }
 }

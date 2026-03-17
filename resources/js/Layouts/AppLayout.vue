@@ -10,6 +10,7 @@ import {
     BookOpenIcon,
     ClipboardDocumentListIcon,
     Cog6ToothIcon,
+    CpuChipIcon,
     UserIcon,
     WrenchScrewdriverIcon,
     FlagIcon,
@@ -37,6 +38,7 @@ const menu = [
     { label: 'Trades', href: route('trades.index'), current: 'trades.*', icon: ClipboardDocumentListIcon },
     { label: 'Journal', href: route('journals.index'), current: 'journals.*', icon: BookOpenIcon },
     { label: 'Statistics', href: route('statistics.index'), current: 'statistics.*', icon: ChartBarIcon },
+    { label: 'AI', href: route('ai.index'), current: 'ai.*', icon: CpuChipIcon },
 ];
 
 const settingsMenu = [

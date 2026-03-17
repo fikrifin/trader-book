@@ -115,6 +115,42 @@ Lihat health metric provider:
 php artisan instruments:twelvedata-health
 ```
 
+## AI Recommendation (Ollama Cloud)
+
+Menu AI memungkinkan user memilih instrument tersimpan dan menghasilkan recommendation terstruktur (decision support).
+
+### Environment
+
+Tambahkan konfigurasi berikut di `.env`:
+
+```bash
+OLLAMA_API_KEY=your_api_key_here
+OLLAMA_BASE_URL=https://ollama.com
+OLLAMA_MODEL=deepseek-v3.2:cloud
+AI_RECOMMENDATION_TIMEOUT=30
+AI_RECOMMENDATION_RETRY_TIMES=2
+AI_RECOMMENDATION_RETRY_SLEEP_MS=400
+AI_RECOMMENDATION_RATE_LIMIT=20
+```
+
+### Setup
+
+```bash
+php artisan migrate
+```
+
+### Fitur MVP
+
+- Halaman `AI Assistant` untuk generate recommendation per instrument.
+- Histori recommendation disimpan ke tabel `ai_recommendations`.
+- Risk guardrails: akun blocked akan otomatis menghasilkan `no_trade`.
+- Endpoint generate sudah dilindungi rate limit.
+
+### Catatan Penting
+
+- Output AI adalah decision support, bukan nasihat keuangan.
+- Gunakan selalu risk management pribadi sebelum eksekusi trade.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

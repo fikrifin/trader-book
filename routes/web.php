@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DailyJournalController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\AiRecommendationController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\MonthlyTargetController;
 use App\Http\Controllers\ProfileController;
@@ -26,6 +27,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('journals', DailyJournalController::class)->only(['index', 'show', 'store', 'update']);
 
     Route::get('/statistics', [StatisticController::class, 'index'])->name('statistics.index');
+
+    Route::get('/ai', [AiRecommendationController::class, 'index'])->name('ai.index');
+    Route::post('/ai/recommendations', [AiRecommendationController::class, 'store'])
+        ->middleware('throttle:ai-recommendation')
+        ->name('ai.recommendations.store');
 
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');

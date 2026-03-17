@@ -45,4 +45,13 @@ return [
         'sync_limit' => (int) env('TWELVEDATA_SYNC_LIMIT', 20),
     ],
 
+    'ollama' => [
+        'api_key' => env('OLLAMA_API_KEY'),
+        'base_url' => env('OLLAMA_BASE_URL', 'https://ollama.com'),
+        'model' => env('OLLAMA_MODEL', 'gpt-oss:120b'),
+        'timeout' => (int) env('AI_RECOMMENDATION_TIMEOUT', 30),
+        'retry_times' => (int) env('AI_RECOMMENDATION_RETRY_TIMES', 2),
+        'retry_sleep_ms' => (int) env('AI_RECOMMENDATION_RETRY_SLEEP_MS', 400),
+    ],
+
 ];
