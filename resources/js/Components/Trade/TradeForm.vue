@@ -52,6 +52,16 @@ const pipSize = computed(() => {
     return 0.0001;
 });
 
+const pipValuePerLot = computed(() => {
+    const pair = String(props.form.pair || '').toUpperCase();
+
+    // Forex majors generally use $10 per pip for 1.00 lot.
+    // Metals/indices/crypto in this app use a $1 point value for 1.00 lot.
+    if (pair.includes('XAU') || pair.includes('NAS') || pair.includes('BTC')) return 1;
+
+    return 10;
+});
+
 watch(
     () => [props.form.entry_price, props.form.stop_loss, props.form.take_profit_1],
     () => {
@@ -93,7 +103,7 @@ watch(
             ? (entry - close) / pipSize.value
             : (close - entry) / pipSize.value;
 
-        const gross = signedPips * 10 * lot;
+        const gross = signedPips * pipValuePerLot.value * lot;
         props.form.pips = signedPips.toFixed(1);
         props.form.profit_loss_gross = gross.toFixed(2);
         props.form.profit_loss = (gross - commission - Math.abs(swap)).toFixed(2);
