@@ -9,8 +9,15 @@ const props = defineProps({
     journals: { type: Array, default: () => [] },
 });
 
+const toLocalIsoDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const todayIso = new Date().toISOString().slice(0, 10);
+const todayIso = toLocalIsoDate(new Date());
 
 const summaryMap = computed(() => {
     const map = new Map();
@@ -44,7 +51,7 @@ const cells = computed(() => {
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
-        const iso = date.toISOString().slice(0, 10);
+        const iso = toLocalIsoDate(date);
         values.push({
             day,
             iso,

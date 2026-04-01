@@ -12,6 +12,14 @@ import AppTable from '@/Components/UI/AppTable.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 
+const todayLocalDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const props = defineProps({
     journals: Object,
     month: String,
@@ -38,7 +46,7 @@ const applyFilters = () => {
 
 const form = useForm({
     trading_account_id: props.active_account_id || '',
-    date: new Date().toISOString().slice(0, 10),
+    date: todayLocalDate(),
     mood_before: '',
     plan: '',
     review: '',

@@ -3,6 +3,14 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import TradeForm from '@/Components/Trade/TradeForm.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
+const todayLocalDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const props = defineProps({
     accounts: Array,
     instruments: Array,
@@ -13,7 +21,7 @@ const form = useForm({
     trading_account_id: '',
     instrument_id: '',
     setup_id: '',
-    date: new Date().toISOString().slice(0, 10),
+    date: todayLocalDate(),
     open_time: '',
     close_time: '',
     session: 'asia',
