@@ -14,9 +14,11 @@ import {
     ShieldCheckIcon,
     ShieldExclamationIcon,
 } from '@heroicons/vue/24/outline';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+
+const page = usePage();
 
 const props = defineProps({
     today_summary: Object,
@@ -69,6 +71,8 @@ const dailyPlChartData = computed(() => ({
 const topMoversLive = ref([]);
 let topMoverTimer = null;
 
+const activeAccount = computed(() => page.props.active_account || null);
+
 const topMoverSymbols = computed(() => (topMoversLive.value || [])
     .map((item) => item.symbol)
     .filter(Boolean));
@@ -120,9 +124,20 @@ onBeforeUnmount(() => {
     <Head title="Dashboard" />
 
     <AppLayout>
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold text-gray-900">Dashboard</h1>
-            <Link :href="route('trades.create')" class="inline-flex items-center rounded-lg bg-gradient-to-r from-brand-600 to-brand-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-brand-700 hover:to-brand-600">+ Add Trade</Link>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <div v-if="activeAccount" class="rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-right">
+                    <p class="text-[10px] font-semibold uppercase tracking-wide text-brand-700">Saldo Saat Ini</p>
+                    <p class="text-sm font-bold text-brand-800">
+                        <AppCurrencyDisplay :value="activeAccount.current_balance || 0" />
+                    </p>
+                    <p class="text-[10px] text-brand-700/80">{{ activeAccount.name }}</p>
+                </div>
+
+                <Link :href="route('trades.create')" class="inline-flex items-center rounded-lg bg-gradient-to-r from-brand-600 to-brand-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:from-brand-700 hover:to-brand-600">+ Add Trade</Link>
+            </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-4">
