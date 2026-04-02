@@ -10,13 +10,36 @@ const props = defineProps({
     setups: Array,
 });
 
+const normalizeDateForInput = (value) => {
+    if (!value) return '';
+
+    const text = String(value);
+    if (text.length >= 10) {
+        return text.slice(0, 10);
+    }
+
+    return text;
+};
+
+const normalizeTimeForInput = (value) => {
+    if (!value) return '';
+
+    const text = String(value);
+    const parts = text.split(':');
+    if (parts.length >= 2) {
+        return `${parts[0]}:${parts[1]}`;
+    }
+
+    return text;
+};
+
 const form = useForm({
     trading_account_id: props.trade?.trading_account_id || '',
     instrument_id: props.trade?.instrument_id || '',
     setup_id: props.trade?.setup_id || '',
-    date: props.trade?.date || '',
-    open_time: props.trade?.open_time || '',
-    close_time: props.trade?.close_time || '',
+    date: normalizeDateForInput(props.trade?.date),
+    open_time: normalizeTimeForInput(props.trade?.open_time),
+    close_time: normalizeTimeForInput(props.trade?.close_time),
     session: props.trade?.session || 'asia',
     pair: props.trade?.pair || '',
     direction: props.trade?.direction || 'buy',
