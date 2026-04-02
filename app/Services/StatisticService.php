@@ -236,21 +236,55 @@ class StatisticService
         $durations = $this->trades
             ->filter(fn ($trade) => ! empty($trade->open_time) && ! empty($trade->close_time))
             ->map(function ($trade) {
-                $open = Carbon::parse($trade->date.' '.$trade->open_time);
-                $close = Carbon::parse($trade->date.' '.$trade->close_time);
+                $date = Carbon::parse((string) $trade->date)->toDateString();
+                $openTime = $this->normalizeTimeForParse($trade->open_time);
+                $closeTime = $this->normalizeTimeForParse($trade->close_time);
+
+                if ($openTime === null || $closeTime === null) {
+                    return null;
+                }
+
+                $open = Carbon::parse($date.' '.$openTime);
+                $close = Carbon::parse($date.' '.$closeTime);
 
                 if ($close->lessThan($open)) {
                     $close = $close->addDay();
                 }
 
                 return $open->diffInMinutes($close);
-            });
+            })
+            ->filter(fn ($minutes) => $minutes !== null);
 
         if ($durations->isEmpty()) {
             return 0;
         }
 
         return round((float) $durations->avg(), 2);
+    }
+
+    protected function normalizeTimeForParse(mixed $time): ?string
+    {
+        if (blank($time)) {
+            return null;
+        }
+
+        $value = trim((string) $time);
+        if ($value === '') {
+            return null;
+        }
+
+        // Supports both H:i and H:i:s and strips accidental date prefix.
+        $lastToken = str_contains($value, ' ') ? (string) str($value)->afterLast(' ') : $value;
+        $parts = explode(':', $lastToken);
+
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        $hour = str_pad(preg_replace('/\D/', '', $parts[0]) ?: '0', 2, '0', STR_PAD_LEFT);
+        $minute = str_pad(preg_replace('/\D/', '', $parts[1]) ?: '0', 2, '0', STR_PAD_LEFT);
+
+        return $hour.':'.$minute;
     }
 
     public function followedPlanRate(): float

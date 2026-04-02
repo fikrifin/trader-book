@@ -96,6 +96,26 @@ const exportData = (format) => {
     const params = new URLSearchParams({ ...filtersForm, format });
     window.location.href = `${route('trades.export')}?${params.toString()}`;
 };
+
+const formatDisplayDate = (value) => {
+    if (!value) return '-';
+
+    const text = String(value);
+
+    // Already in Y-m-d format.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        const [year, month, day] = text.split('-');
+        return `${day}-${month}-${year}`;
+    }
+
+    const date = new Date(text);
+    if (Number.isNaN(date.getTime())) return text;
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+};
 </script>
 
 <template>
@@ -188,7 +208,7 @@ const exportData = (format) => {
                         <p class="text-sm font-semibold text-gray-900">{{ item.pair }}</p>
                         <AppBadge :variant="item.result === 'win' ? 'win' : (item.result === 'loss' ? 'loss' : (item.result === 'breakeven' ? 'breakeven' : 'partial'))">{{ item.result }}</AppBadge>
                     </div>
-                    <div class="mb-2 text-xs text-gray-500">{{ item.date }} • {{ item.session }}</div>
+                    <div class="mb-2 text-xs text-gray-500">{{ formatDisplayDate(item.date) }} • {{ item.session }}</div>
                     <div class="mb-3 flex items-center justify-between">
                         <AppBadge :variant="item.direction === 'buy' ? 'buy' : 'sell'">{{ item.direction }}</AppBadge>
                         <p class="text-sm font-semibold" :class="Number(item.profit_loss) >= 0 ? 'text-green-600' : 'text-red-600'"><AppCurrencyDisplay :value="item.profit_loss" show-plus /></p>
@@ -215,7 +235,7 @@ const exportData = (format) => {
                 </thead>
                 <tbody class="divide-y">
                     <tr v-for="item in trades.data" :key="item.id" class="transition-colors hover:bg-gray-50/80" :class="item.result === 'win' ? 'bg-emerald-50/20' : (item.result === 'loss' ? 'bg-red-50/20' : '')">
-                        <td class="px-3 py-2">{{ item.date }}</td>
+                        <td class="px-3 py-2">{{ formatDisplayDate(item.date) }}</td>
                         <td class="px-3 py-2">{{ item.pair }}</td>
                         <td class="px-3 py-2">
                             <AppBadge :variant="item.direction === 'buy' ? 'buy' : 'sell'">{{ item.direction }}</AppBadge>
